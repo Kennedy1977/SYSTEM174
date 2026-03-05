@@ -1,0 +1,198 @@
+CONTROLLED DETONATION — ASTRO + TAILWIND STYLE GUIDE (VISUAL SYSTEM)
+Goal: dark, controlled, pressure-driven underground artist site. Minimal ornament. Engineered grid. Accent used sparingly.
+
+========================================================
+1) BRAND PRINCIPLES
+========================================================
+- Underground > commercial. No glossy/festival/EDM visuals.
+- “Engineered pressure”: strict hierarchy, strong grid, clean spacing.
+- Industrial surfaces: panels, hairline borders, subtle grain.
+- Accent is rare (5–10% of UI max). Used for status + focus + tiny highlights.
+- Motion: micro only (opacity, 1–2px translate). No parallax, no big reveals.
+
+========================================================
+2) COLOR TOKENS (SEMANTIC)
+========================================================
+Pick ONE accent primary:
+- ACCENT_ACID  = #B8FF2C
+- ACCENT_CYAN  = #37E8FF
+
+Core:
+- BG_INK       = #0A0C10
+- SURFACE_1    = #11151C
+- SURFACE_2    = #1A2230
+- LINE         = #263245
+
+Text:
+- TEXT         = #E7EDF6
+- TEXT_2       = #AAB6C6
+- TEXT_3       = #77849A
+
+Usage rules:
+- Default page bg: BG_INK
+- Cards/sections: SURFACE_1 / SURFACE_2
+- Borders/dividers: LINE (or white/10)
+- Primary text: TEXT; Secondary: TEXT_2; Meta: TEXT_3
+- Accent: badges, focus rings, active nav underline, tiny indicators only.
+
+========================================================
+3) TYPOGRAPHY (TAILWIND-EXPRESSED)
+========================================================
+Recommended font families (if available):
+- Display: "Sora" or "Space Grotesk"
+- Body: "Inter"
+- Mono: "JetBrains Mono"
+
+Type scale (Tailwind classes):
+- H1: text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-[-0.02em] uppercase
+- H2: text-xl sm:text-2xl lg:text-3xl font-semibold tracking-[-0.015em] uppercase
+- H3: text-lg sm:text-xl font-semibold tracking-[-0.01em]
+- Body: text-[15px] leading-relaxed text-[TEXT_2]
+- Meta label: text-xs uppercase tracking-[0.2em] text-[TEXT_2] font-mono
+
+Copy tone:
+- Short, functional, “hardware readout” energy.
+- Use labels like: OUT NOW, LOW TICKETS, BOOKINGS, ADD TO CALENDAR, MEDIA KIT.
+
+========================================================
+4) LAYOUT / GRID
+========================================================
+- Container: max-w-6xl (1200–1280 feel) with px-5 sm:px-6 lg:px-8
+- Sections: py-14 sm:py-16 lg:py-24
+- Grid: desktop 12 columns, mobile 1–4 columns
+- Gaps: gap-6 lg:gap-8
+- Cards: consistent padding (p-5 sm:p-6) and consistent height where possible.
+
+========================================================
+5) TEXTURE & SURFACES
+========================================================
+- Prefer borders over heavy shadows.
+- Subtle grain overlay opacity 0.04–0.07 (optional).
+- Optional faint grid background: very low contrast lines; do not distract.
+
+Suggested “grid background” utility (apply to main wrapper):
+bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:48px_48px]
+
+========================================================
+6) COMPONENT RECIPES (TAILWIND CLASS STRINGS)
+========================================================
+NOTE: Replace ACCENT with either #B8FF2C (acid) or #37E8FF (cyan).
+
+A) PAGE WRAPPER (top-level)
+bg-[#0A0C10] text-[#E7EDF6] antialiased selection:bg-[ACCENT]/30 selection:text-[#E7EDF6]
+
+B) NAV (sticky, industrial)
+NAV WRAPPER:
+sticky top-0 z-50 backdrop-blur bg-[#0A0C10]/70 border-b border-white/10
+NAV INNER:
+mx-auto max-w-6xl px-5 sm:px-6 lg:px-8 h-14 flex items-center justify-between
+NAV LINK:
+text-sm text-[#AAB6C6] hover:text-[#E7EDF6] transition duration-150 ease-out
+NAV LINK ACTIVE:
+text-[#E7EDF6] relative after:absolute after:-bottom-2 after:left-0 after:h-[2px] after:w-full after:bg-[ACCENT]
+
+C) SECTION WRAPPER (consistent rhythm)
+mx-auto max-w-6xl px-5 sm:px-6 lg:px-8 py-14 sm:py-16 lg:py-24
+
+D) CARD (primary surface language)
+rounded-2xl border border-white/10 bg-[#11151C]/70 shadow-[0_18px_60px_-30px_rgba(0,0,0,0.9)]
+CARD PAD:
+p-5 sm:p-6
+
+E) BUTTONS
+PRIMARY (accent outline, controlled):
+inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
+border border-[ACCENT]/70 text-[#E7EDF6]
+hover:border-[ACCENT] hover:bg-[ACCENT]/10
+focus:outline-none focus:ring-2 focus:ring-[ACCENT]/60 focus:ring-offset-2 focus:ring-offset-[#0A0C10]
+transition duration-150 ease-out
+
+SECONDARY (steel plate):
+inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
+bg-[#1A2230] border border-white/10 text-[#E7EDF6]
+hover:bg-[#1A2230]/80 hover:border-white/20
+focus:outline-none focus:ring-2 focus:ring-[ACCENT]/40 focus:ring-offset-2 focus:ring-offset-[#0A0C10]
+transition duration-150 ease-out
+
+F) BADGES (status)
+LOW TICKETS:
+inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold
+bg-[ACCENT]/10 text-[ACCENT] border border-[ACCENT]/30
+
+SOLD OUT:
+inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold
+bg-transparent text-[#77849A] border border-white/10
+
+G) SHOWS LIST ROW (table-like scanning)
+ROW:
+grid grid-cols-12 items-center gap-3 py-4 border-b border-white/10
+DATE BLOCK (mono):
+col-span-3 sm:col-span-2 font-mono text-sm text-[#E7EDF6]
+CITY / VENUE:
+col-span-7 sm:col-span-8
+CTA:
+col-span-2 sm:col-span-2 flex justify-end
+
+H) MUSIC GRID (release tiles)
+GRID:
+grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6
+TILE:
+group rounded-2xl border border-white/10 bg-[#11151C]/60 overflow-hidden
+hover:border-[ACCENT]/40 transition duration-150 ease-out
+COVER:
+aspect-square w-full object-cover opacity-95 group-hover:opacity-100 transition duration-150 ease-out
+
+I) FORMS (contact/booking)
+INPUT:
+w-full rounded-xl bg-[#0A0C10]/40 border border-white/10 px-3 py-2 text-sm text-[#E7EDF6]
+placeholder:text-[#77849A]
+focus:outline-none focus:ring-2 focus:ring-[ACCENT]/50 focus:border-[ACCENT]/50
+LABEL (meta):
+text-xs uppercase tracking-[0.2em] text-[#AAB6C6] font-mono
+
+========================================================
+7) MOTION RULES
+========================================================
+- transition: duration-150 ease-out (default)
+- hover lift: hover:-translate-y-0.5 (max), with subtle border brighten
+- no bounce easing, no large-scale transforms, no heavy scroll animations
+
+========================================================
+8) PAGE TEMPLATES (VISUAL STRUCTURE)
+========================================================
+HOME:
+- Hero (name, tagline, two CTAs)
+- Latest release (featured card + embed)
+- Upcoming shows (next 3 rows + view all)
+- Featured mix (single embed)
+- About (2–3 lines) + newsletter
+
+MUSIC:
+- Filter chips (All / EP / Singles / Mixes / Remixes)
+- Release grid
+- Each tile: cover, title, type, year, small links row
+
+SHOWS:
+- Upcoming first
+- Past toggle
+- Rows with status pills (low tickets / sold out)
+
+MEDIA KIT:
+- Press photos grid (download)
+- Short bio / Full bio downloads
+- Logos, tech rider PDF button
+
+CONTACT:
+- Booking form + social links list
+- Management link if needed
+
+========================================================
+9) DO-NOT-DO LIST (AVOID)
+========================================================
+- Big glossy gradients, supersaw/festival energy visuals
+- Cartoon icons, playful illustrations
+- Overblown distortion textures that reduce readability
+- Excess neon everywhere (accent must stay rare)
+- Trap/EDM poster tropes
+
+END OF STYLE GUIDE

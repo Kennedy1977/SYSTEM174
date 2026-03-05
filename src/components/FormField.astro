@@ -1,0 +1,14 @@
+---
+const { label, name, type = "text", placeholder = "", textarea = false, rows = 4, helper = "" } = Astro.props;
+const inputClass = "w-full rounded-xl bg-[#0A0C10]/40 border border-white/10 px-3 py-2 text-sm text-[#E7EDF6] placeholder:text-[#77849A] focus:outline-none focus:ring-2 focus:ring-[#B8FF2C]/50 focus:border-[#B8FF2C]/50";
+---
+
+<label class="block">
+  <span class="text-xs uppercase tracking-[0.2em] text-[#AAB6C6] font-mono">{label}</span>
+  {textarea ? (
+    <textarea name={name} rows={rows} placeholder={placeholder} class={`${inputClass} mt-2`} />
+  ) : (
+    <input type={type} name={name} placeholder={placeholder} class={`${inputClass} mt-2`} />
+  )}
+  {helper && <p class="mt-2 text-xs text-[#77849A]">{helper}</p>}
+</label>

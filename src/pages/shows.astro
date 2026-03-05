@@ -1,0 +1,44 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Section from "../components/Section.astro";
+import Card from "../components/Card.astro";
+import ShowRow from "../components/ShowRow.astro";
+import { upcomingShows, pastShows } from "../data/site";
+
+const view = Astro.url.searchParams.get("view") === "past" ? "past" : "upcoming";
+---
+
+<BaseLayout title="Controlled Detonation | Shows">
+  <Section title="SHOWS" description="Upcoming runs first. Past dates available below.">
+    <div class="mb-6 inline-flex rounded-xl border border-white/10 p-1 bg-[#11151C]/70">
+      <a
+        href="/shows?view=upcoming"
+        class:list={[
+          "rounded-lg px-3 py-1.5 text-xs font-mono uppercase tracking-[0.2em] transition duration-150 ease-out",
+          view === "upcoming" ? "text-[#E7EDF6] border border-[#B8FF2C]/70" : "text-[#AAB6C6] hover:text-[#E7EDF6]",
+        ]}
+      >
+        Upcoming
+      </a>
+      <a
+        href="/shows?view=past"
+        class:list={[
+          "rounded-lg px-3 py-1.5 text-xs font-mono uppercase tracking-[0.2em] transition duration-150 ease-out",
+          view === "past" ? "text-[#E7EDF6] border border-[#B8FF2C]/70" : "text-[#AAB6C6] hover:text-[#E7EDF6]",
+        ]}
+      >
+        Past
+      </a>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8">
+      <div class="md:col-span-12">
+        <Card>
+          <p class="mb-2 text-xs uppercase tracking-[0.2em] text-[#AAB6C6] font-mono">
+            {view === "upcoming" ? "Upcoming" : "Past"}
+          </p>
+          {(view === "upcoming" ? upcomingShows : pastShows).map((show) => <ShowRow show={show} />)}
+        </Card>
+      </div>
+    </div>
+  </Section>
+</BaseLayout>

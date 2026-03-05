@@ -1,0 +1,19 @@
+---
+const { status } = Astro.props;
+---
+
+{status === "LOW_TICKETS" && (
+  <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-[#B8FF2C]/10 text-[#B8FF2C] border border-[#B8FF2C]/30">
+    LOW TICKETS
+  </span>
+)}
+{status === "SOLD_OUT" && (
+  <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-transparent text-[#77849A] border border-white/10">
+    SOLD OUT
+  </span>
+)}
+{status === "NEW" && (
+  <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-[#B8FF2C]/10 text-[#B8FF2C] border border-[#B8FF2C]/30">
+    NEW
+  </span>
+)}

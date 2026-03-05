@@ -1,0 +1,221 @@
+CONTROLLED DETONATION — CODEX BUILD BRIEF (ASTRO + TAILWIND)
+Purpose: implement an artist website using Astro + Tailwind with an industrial, pressure-driven dark UI.
+Priority: visual fidelity + reusable components + clean scanning layouts.
+
+========================================================
+0) NON-NEGOTIABLE VISUAL RULES
+========================================================
+- Dark, minimal, industrial. No glossy/festival/EDM aesthetics.
+- Accent is rare (5–10% of UI max). Use for focus, active state, status, tiny highlights.
+- Borders > shadows. Shadows are soft + wide only.
+- Motion is micro only (150ms, small translate, opacity). No bouncy easing.
+- Keep layouts DJ-friendly: clear hierarchy, scannable lists, consistent spacing.
+
+========================================================
+1) DESIGN TOKENS (INLINE TAILWIND HEX)
+========================================================
+Base:
+- bg:        #0A0C10
+- surface1:  #11151C
+- surface2:  #1A2230
+- line:      #263245
+Text:
+- text:      #E7EDF6
+- text2:     #AAB6C6
+- text3:     #77849A
+Accent (pick one):
+- accent:    #B8FF2C  (acid)  OR  #37E8FF (cyan)
+
+Use all colors via Tailwind arbitrary values: bg-[#0A0C10], text-[#E7EDF6], etc.
+Define ACCENT at the top of components as a string if needed.
+
+========================================================
+2) REQUIRED PAGES
+========================================================
+/               (Home)
+/music          (Releases + mixes)
+/shows          (Upcoming + past)
+/media          (Media kit downloads)
+/contact        (Booking form + socials)
+
+Optional:
+/store          (or external link)
+/post/*         (if blog/press needed)
+
+========================================================
+3) INFORMATION ARCHITECTURE (PER PAGE)
+========================================================
+HOME (index):
+A) HERO
+- Left: Artist name (H1 uppercase), tagline (short), location (mono meta)
+- Right/Below: 2 CTAs (Listen, Bookings)
+- Small “Latest drop” badge (accent border, tiny)
+
+B) LATEST RELEASE
+- Featured card with cover + title + type + year + links row
+- Embed block (SoundCloud/Bandcamp/Spotify placeholder area)
+
+C) UPCOMING SHOWS (next 3)
+- Table-like rows (date mono, city/venue, status badge, tickets CTA)
+- Link: View all shows
+
+D) FEATURED MIX
+- Single embed card + small tracklist link
+
+E) ABOUT (short)
+- 2–3 lines max + CTA to Media Kit
+
+F) NEWSLETTER (optional)
+- Single email input + subscribe button
+
+MUSIC:
+- Filter chips row: All / EP / Singles / Mixes / Remixes
+- Releases grid: 2 cols mobile, 3 sm, 4 lg
+- Each tile: cover (square), title, meta, link icons row
+- Provide a “Featured Release” slot at top (optional)
+
+SHOWS:
+- Upcoming first (default)
+- Past toggle (simple segmented control)
+- Row layout consistent, status pill when needed, ticket button
+
+MEDIA:
+- Press photo grid (download buttons)
+- Logos download
+- Short bio text block + “copy” button style (optional)
+- Tech rider link/button (PDF)
+- Contact/booking details repeated
+
+CONTACT:
+- Booking form: name, email, subject, message
+- Right column: socials list + management details
+- Keep it minimal; no goofy icons
+
+========================================================
+4) REQUIRED COMPONENTS (REUSABLE)
+========================================================
+- BaseLayout: wrapper, optional grid/noise overlay, nav + footer
+- Nav: sticky, active underline
+- Footer: minimal links + copyright + socials
+- Section: title + optional description + slot
+- Card: shared surface style wrapper
+- ButtonPrimary, ButtonSecondary
+- BadgeStatus (low tickets / sold out / new)
+- ReleaseCard (tile + featured variant)
+- ShowRow
+- EmbedFrame (consistent player container)
+- MediaDownloadCard
+- FormField (label + input/textarea + helper)
+
+========================================================
+5) TAILWIND CLASS RECIPES (USE EXACTLY)
+========================================================
+NOTE: Replace [ACCENT] with #B8FF2C or #37E8FF.
+
+PAGE WRAPPER:
+bg-[#0A0C10] text-[#E7EDF6] antialiased
+
+OPTIONAL GRID BACKGROUND (apply to top wrapper):
+bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)]
+bg-[size:48px_48px]
+
+NAV WRAPPER:
+sticky top-0 z-50 backdrop-blur bg-[#0A0C10]/70 border-b border-white/10
+
+NAV INNER:
+mx-auto max-w-6xl px-5 sm:px-6 lg:px-8 h-14 flex items-center justify-between
+
+NAV LINK:
+text-sm text-[#AAB6C6] hover:text-[#E7EDF6] transition duration-150 ease-out
+
+NAV LINK ACTIVE:
+text-[#E7EDF6] relative after:absolute after:-bottom-2 after:left-0 after:h-[2px] after:w-full after:bg-[ACCENT]
+
+SECTION WRAPPER:
+mx-auto max-w-6xl px-5 sm:px-6 lg:px-8 py-14 sm:py-16 lg:py-24
+
+CARD:
+rounded-2xl border border-white/10 bg-[#11151C]/70 shadow-[0_18px_60px_-30px_rgba(0,0,0,0.9)]
+
+CARD PAD:
+p-5 sm:p-6
+
+PRIMARY BUTTON:
+inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
+border border-[ACCENT]/70 text-[#E7EDF6]
+hover:border-[ACCENT] hover:bg-[ACCENT]/10
+focus:outline-none focus:ring-2 focus:ring-[ACCENT]/60 focus:ring-offset-2 focus:ring-offset-[#0A0C10]
+transition duration-150 ease-out
+
+SECONDARY BUTTON:
+inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
+bg-[#1A2230] border border-white/10 text-[#E7EDF6]
+hover:bg-[#1A2230]/80 hover:border-white/20
+focus:outline-none focus:ring-2 focus:ring-[ACCENT]/40 focus:ring-offset-2 focus:ring-offset-[#0A0C10]
+transition duration-150 ease-out
+
+BADGE LOW TICKETS:
+inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold
+bg-[ACCENT]/10 text-[ACCENT] border border-[ACCENT]/30
+
+BADGE SOLD OUT:
+inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold
+bg-transparent text-[#77849A] border border-white/10
+
+SHOW ROW:
+grid grid-cols-12 items-center gap-3 py-4 border-b border-white/10
+
+SHOW DATE (mono):
+col-span-3 sm:col-span-2 font-mono text-sm text-[#E7EDF6]
+
+SHOW MAIN:
+col-span-7 sm:col-span-8
+
+SHOW CTA:
+col-span-2 sm:col-span-2 flex justify-end
+
+MUSIC GRID:
+grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6
+
+RELEASE TILE:
+group rounded-2xl border border-white/10 bg-[#11151C]/60 overflow-hidden
+hover:border-[ACCENT]/40 transition duration-150 ease-out
+
+RELEASE COVER:
+aspect-square w-full object-cover opacity-95 group-hover:opacity-100 transition duration-150 ease-out
+
+FORM LABEL (mono meta):
+text-xs uppercase tracking-[0.2em] text-[#AAB6C6] font-mono
+
+FORM INPUT:
+w-full rounded-xl bg-[#0A0C10]/40 border border-white/10 px-3 py-2 text-sm text-[#E7EDF6]
+placeholder:text-[#77849A]
+focus:outline-none focus:ring-2 focus:ring-[ACCENT]/50 focus:border-[ACCENT]/50
+
+========================================================
+6) RESPONSIVE RULES
+========================================================
+- Mobile: single column hero, stacked CTAs
+- Music grid: 2 cols mobile, 3 sm, 4 lg
+- Shows: keep date mono block visible; allow venue to wrap
+- Maintain generous padding; never cram.
+
+========================================================
+7) CONTENT PLACEHOLDERS (DEFAULT LABELS)
+========================================================
+Artist name: CONTROLLED DETONATION
+Tagline: “174 BPM pressure engineered. No halftime.”
+Primary CTAs: LISTEN / BOOKINGS
+Sections: LATEST RELEASE / UPCOMING SHOWS / FEATURED MIX / MEDIA KIT
+
+========================================================
+8) ACCEPTANCE CHECKLIST
+========================================================
+- Visual language matches: dark industrial, restrained accent
+- All pages share consistent spacing, card styles, typography
+- Shows list is instantly scannable
+- Music page has filter UI + grid
+- Focus states are visible and use accent
+- No loud gradients, no festival visuals, no playful icons
+
+END BRIEF

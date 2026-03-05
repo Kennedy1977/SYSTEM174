@@ -1,0 +1,40 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Section from "../components/Section.astro";
+import Card from "../components/Card.astro";
+import ReleaseCard from "../components/ReleaseCard.astro";
+import { releases } from "../data/site";
+
+const filters = ["All", "EP", "Singles", "Mixes", "Remixes"];
+---
+
+<BaseLayout title="Controlled Detonation | Music">
+  <Section title="MUSIC" description="Catalog scan by format. All releases are available on major platforms.">
+    <div class="mb-6 flex flex-wrap gap-2">
+      {filters.map((filter, index) => (
+        <button
+          class:list={[
+            "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition duration-150 ease-out",
+            index === 0
+              ? "border border-[#B8FF2C]/70 text-[#E7EDF6] hover:border-[#B8FF2C] hover:bg-[#B8FF2C]/10 focus:outline-none focus:ring-2 focus:ring-[#B8FF2C]/60 focus:ring-offset-2 focus:ring-offset-[#0A0C10]"
+              : "bg-[#1A2230] border border-white/10 text-[#E7EDF6] hover:bg-[#1A2230]/80 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-[#B8FF2C]/40 focus:ring-offset-2 focus:ring-offset-[#0A0C10]",
+          ]}
+          type="button"
+        >
+          {filter}
+        </button>
+      ))}
+    </div>
+
+    <div class="mb-6">
+      <Card>
+        <p class="text-xs uppercase tracking-[0.2em] text-[#AAB6C6] font-mono">Featured Release</p>
+        <div class="mt-4"><ReleaseCard release={releases[0]} featured={true} /></div>
+      </Card>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+      {releases.map((release) => <ReleaseCard release={release} />)}
+    </div>
+  </Section>
+</BaseLayout>

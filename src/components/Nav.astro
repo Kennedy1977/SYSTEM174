@@ -1,0 +1,26 @@
+---
+import { navLinks } from "../data/site";
+const { currentPath } = Astro.props;
+---
+
+<nav class="sticky top-0 z-50 backdrop-blur bg-[#0A0C10]/70 border-b border-white/10">
+  <div class="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+    <a href="/" class="text-xs uppercase tracking-[0.2em] text-[#AAB6C6] font-mono">CONTROLLED DETONATION</a>
+    <div class="flex items-center gap-6">
+      {navLinks.map((link) => {
+        const isActive = currentPath === link.href;
+        return (
+          <a
+            href={link.href}
+            class:list={[
+              "text-sm text-[#AAB6C6] hover:text-[#E7EDF6] transition duration-150 ease-out",
+              isActive && "text-[#E7EDF6] relative after:absolute after:-bottom-2 after:left-0 after:h-[2px] after:w-full after:bg-[#B8FF2C]",
+            ]}
+          >
+            {link.label}
+          </a>
+        );
+      })}
+    </div>
+  </div>
+</nav>
