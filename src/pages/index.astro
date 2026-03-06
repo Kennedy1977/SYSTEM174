@@ -4,11 +4,11 @@ import Section from "../components/Section.astro";
 import Card from "../components/Card.astro";
 import ButtonPrimary from "../components/ButtonPrimary.astro";
 import BadgeStatus from "../components/BadgeStatus.astro";
+import SoundCloudTrackCard from "../components/SoundCloudTrackCard.astro";
 import { getSoundCloudDashboardData } from "../lib/soundcloud";
+import { getSoundCloudPlayerUrl } from "../lib/soundcloud-embed";
 
 const fallbackCoverUrl = "/textures/bg-main.png";
-const getPlayerUrl = (url: string) =>
-  `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%235CC8FF&auto_play=true&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=true&visual=false`;
 const soundcloud = await getSoundCloudDashboardData();
 const selectedTracks = soundcloud.tracks
   .filter((track) => {
@@ -37,7 +37,7 @@ const selectedTracks = soundcloud.tracks
     genre: track.genre ?? "",
   }));
 const initialInlinePlayerUrl = selectedTracks[0]?.soundcloudUrl
-  ? getPlayerUrl(selectedTracks[0].soundcloudUrl).replace("auto_play=true", "auto_play=false")
+  ? getSoundCloudPlayerUrl(selectedTracks[0].soundcloudUrl, false)
   : "";
 ---
 
@@ -103,43 +103,16 @@ const initialInlinePlayerUrl = selectedTracks[0]?.soundcloudUrl
         </p>
       </Card>
     ) : (
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
+      <div id="home-selected-tracks" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
         {selectedTracks.map((track) => (
-          <article class="group rounded-2xl border border-white/10 bg-[#11151C]/60 overflow-hidden hover:border-[#5CC8FF]/40 transition duration-150 ease-out">
-            <button
-              type="button"
-              data-home-sc-play={getPlayerUrl(track.soundcloudUrl || track.href)}
-              data-home-sc-pause={getPlayerUrl(track.soundcloudUrl || track.href).replace("auto_play=true", "auto_play=false")}
-              class="block w-full text-left"
-              aria-label={`Play ${track.title}`}
-            >
-              <div class="relative aspect-square w-full bg-[#1A2230] bg-cover bg-center" style={`background-image:url('${fallbackCoverUrl}')`}>
-                {track.artworkUrl ? (
-                  <img
-                    src={track.artworkUrl}
-                    alt={track.title}
-                    onerror="this.style.display='none'"
-                    class="h-full w-full object-cover opacity-95 group-hover:opacity-100 transition duration-150 ease-out"
-                  />
-                ) : null}
-                <div class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 transition duration-150 ease-out group-hover:opacity-100">
-                  <span data-home-icon-toggle class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[#5CC8FF]/60 bg-[#0A0C10]/70 text-[#E7EDF6]">
-                    ▶
-                  </span>
-                </div>
-              </div>
-            </button>
-            <div class="p-3">
-              <p class="text-sm font-semibold tracking-tight text-[#E7EDF6]">{track.title}</p>
-              {track.genre && <p class="mt-1 text-[11px] uppercase tracking-[0.18em] text-[#77849A]">{track.genre}</p>}
-              <a
-                href={track.href}
-                class="mt-3 inline-block text-xs font-semibold tracking-[0.12em] text-accent hover:text-white transition-colors"
-              >
-                OPEN
-              </a>
-            </div>
-          </article>
+          <SoundCloudTrackCard
+            title={track.title}
+            genre={track.genre}
+            artworkUrl={track.artworkUrl}
+            fallbackCoverUrl={fallbackCoverUrl}
+            playUrl={getSoundCloudPlayerUrl(track.soundcloudUrl || track.href)}
+            pauseUrl={getSoundCloudPlayerUrl(track.soundcloudUrl || track.href, false)}
+          />
         ))}
       </div>
     )}
@@ -152,39 +125,53 @@ const initialInlinePlayerUrl = selectedTracks[0]?.soundcloudUrl
     const player = document.getElementById("inline-home-sc-player");
     if (!(player instanceof HTMLIFrameElement)) return;
 
-    const buttons = Array.from(document.querySelectorAll("[data-home-sc-play]"));
-    let currentButton = null;
-    let isPlaying = false;
+    let currentPlayUrl = "";
+    let currentTrigger = null;
 
-    const setIcon = (button, playing) => {
-      const icon = button?.querySelector("[data-home-icon-toggle]");
-      if (!icon) return;
-      icon.textContent = playing ? "❚❚" : "▶";
+    const setTriggerState = (trigger, playing) => {
+      const toggleIcon = trigger?.querySelector("[data-icon-toggle]");
+      const overlay = trigger?.querySelector(".pointer-events-none.absolute");
+      if (overlay instanceof HTMLElement) {
+        overlay.classList.toggle("opacity-100", playing);
+        overlay.classList.toggle("opacity-0", !playing);
+      }
+      if (toggleIcon instanceof HTMLElement) {
+        toggleIcon.textContent = playing ? "❚❚" : "▶";
+        toggleIcon.classList.toggle("border-[#5CC8FF]/70", playing);
+        toggleIcon.classList.toggle("bg-[#5CC8FF]/20", playing);
+        toggleIcon.classList.toggle("border-[#5CC8FF]/60", !playing);
+        toggleIcon.classList.toggle("bg-[#0A0C10]/70", !playing);
+      }
     };
 
-    for (const button of buttons) {
-      if (!(button instanceof HTMLButtonElement)) continue;
-      button.addEventListener("click", () => {
-        const playSrc = button.getAttribute("data-home-sc-play");
-        const pauseSrc = button.getAttribute("data-home-sc-pause");
-        if (!playSrc || !pauseSrc) return;
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const trigger = target.closest("[data-sc-play]");
+      if (!(trigger instanceof HTMLElement)) return;
 
-        if (currentButton === button && isPlaying) {
-          player.src = pauseSrc;
-          setIcon(button, false);
-          isPlaying = false;
-          return;
-        }
+      if (!trigger.closest("#home-selected-tracks")) return;
 
-        if (currentButton && currentButton !== button) {
-          setIcon(currentButton, false);
-        }
+      const nextUrl = trigger.dataset.scPlay;
+      const pauseUrl = trigger.dataset.scPause;
+      if (!nextUrl || !pauseUrl) return;
 
-        player.src = playSrc;
-        setIcon(button, true);
-        currentButton = button;
-        isPlaying = true;
-      });
-    }
+      if (currentPlayUrl === nextUrl) {
+        player.src = pauseUrl;
+        setTriggerState(trigger, false);
+        currentPlayUrl = "";
+        currentTrigger = null;
+        return;
+      }
+
+      if (currentTrigger) {
+        setTriggerState(currentTrigger, false);
+      }
+
+      player.src = nextUrl;
+      setTriggerState(trigger, true);
+      currentPlayUrl = nextUrl;
+      currentTrigger = trigger;
+    });
   })();
 </script>

@@ -2,7 +2,9 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Section from "../components/Section.astro";
 import Card from "../components/Card.astro";
+import SoundCloudTrackCard from "../components/SoundCloudTrackCard.astro";
 import { getSoundCloudDashboardData } from "../lib/soundcloud";
+import { getSoundCloudPlayerUrl } from "../lib/soundcloud-embed";
 
 const soundcloud = await getSoundCloudDashboardData();
 const tracks = soundcloud.tracks;
@@ -105,10 +107,8 @@ const genreFilters = [
 ];
 
 const fallbackCoverUrl = "/textures/bg-main.png";
-const getPlayerUrl = (url: string) =>
-  `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%235CC8FF&auto_play=true&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=true&visual=false`;
 const initialInlinePlayerUrl = paginatedTracks[0]?.permalink_url
-  ? getPlayerUrl(paginatedTracks[0].permalink_url).replace("auto_play=true", "auto_play=false")
+  ? getSoundCloudPlayerUrl(paginatedTracks[0].permalink_url, false)
   : "";
 ---
 
@@ -236,37 +236,14 @@ const initialInlinePlayerUrl = paginatedTracks[0]?.permalink_url
         <>
           <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {paginatedTracks.map((track) => (
-              <article class="group rounded-2xl border border-white/10 bg-[#11151C]/60 overflow-hidden hover:border-[#5CC8FF]/40 transition duration-150 ease-out">
-                <button
-                  type="button"
-                  data-sc-play={getPlayerUrl(track.permalink_url)}
-                  data-sc-pause={getPlayerUrl(track.permalink_url).replace("auto_play=true", "auto_play=false")}
-                  class="block w-full text-left"
-                  aria-label={`Play ${track.title}`}
-                >
-                  <div class="relative aspect-square w-full bg-[#1A2230] bg-cover bg-center" style={`background-image:url('${fallbackCoverUrl}')`}>
-                    {track.artwork_url ? (
-                      <img
-                        src={track.artwork_url}
-                        alt={track.title}
-                        onerror="this.style.display='none'"
-                        class="h-full w-full object-cover opacity-95 group-hover:opacity-100 transition duration-150 ease-out"
-                      />
-                    ) : null}
-                    <div class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 transition duration-150 ease-out group-hover:opacity-100">
-                      <span data-icon-toggle class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[#5CC8FF]/60 bg-[#0A0C10]/70 text-[#E7EDF6]">
-                        ▶
-                      </span>
-                    </div>
-                  </div>
-                </button>
-                <div class="p-3">
-                  <p class="text-sm font-semibold tracking-tight text-[#E7EDF6]">{track.title}</p>
-                  {track.genre && (
-                    <p class="mt-1 text-[11px] uppercase tracking-[0.18em] text-[#77849A]">{track.genre}</p>
-                  )}
-                </div>
-              </article>
+              <SoundCloudTrackCard
+                title={track.title}
+                genre={track.genre}
+                artworkUrl={track.artwork_url}
+                fallbackCoverUrl={fallbackCoverUrl}
+                playUrl={getSoundCloudPlayerUrl(track.permalink_url)}
+                pauseUrl={getSoundCloudPlayerUrl(track.permalink_url, false)}
+              />
             ))}
           </div>
           {totalTrackPages > 1 && (
