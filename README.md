@@ -28,9 +28,9 @@ Required:
 - `SOUNDCLOUD_ACCESS_TOKEN`
 - `SOUNDCLOUD_REFRESH_TOKEN`
 
-For staging on `system174.andrewkennedy.dev.com`, set:
+For staging on `system174.andrewkennedydev.com`, set:
 
-- `SOUNDCLOUD_REDIRECT_URI=https://system174.andrewkennedy.dev.com/soundcloud/callback`
+- `SOUNDCLOUD_REDIRECT_URI=https://system174.andrewkennedydev.com/soundcloud/callback`
 
 Also add the same callback URL in your SoundCloud app settings.
 

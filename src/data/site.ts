@@ -1,42 +1,8 @@
-export const ACCENT = "#5CC8FF";
-
 export const navLinks = [
   { href: "/", label: "Home" },
   { href: "/music", label: "Music" },
   { href: "/playlists", label: "Playlists" },
-
   { href: "/contact", label: "Contact" },
-];
-
-export const homepageSelectedTracks = [
-  {
-    title: "Chasing Shadows",
-    href: "/playlists?genre=Drum+%26+Bass&playlist=2199354848",
-    soundcloudUrl: "https://soundcloud.com/",
-    artworkUrl: "",
-    genre: "Drum & Bass",
-  },
-  {
-    title: "Track Two",
-    href: "https://soundcloud.com/",
-    soundcloudUrl: "https://soundcloud.com/",
-    artworkUrl: "",
-    genre: "",
-  },
-  {
-    title: "Track Three",
-    href: "https://soundcloud.com/",
-    soundcloudUrl: "https://soundcloud.com/",
-    artworkUrl: "",
-    genre: "",
-  },
-  {
-    title: "Track Four",
-    href: "https://soundcloud.com/",
-    soundcloudUrl: "https://soundcloud.com/",
-    artworkUrl: "",
-    genre: "",
-  },
 ];
 
 export const releases = [
@@ -69,11 +35,4 @@ export const mediaDownloads = [
   { title: "Short Bio", description: "80-word promoter version", action: "Download TXT" },
   { title: "Full Bio", description: "Press-ready long format", action: "Download DOC" },
   { title: "Tech Rider", description: "Stage + monitor requirements", action: "Download PDF" },
-];
-
-export const socials = [
-  { label: "Instagram", href: "#" },
-  { label: "SoundCloud", href: "#" },
-  { label: "Bandcamp", href: "#" },
-  { label: "YouTube", href: "#" },
 ];
