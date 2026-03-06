@@ -6,7 +6,7 @@ const { currentPath } = Astro.props;
 <nav class="sticky top-0 z-50 backdrop-blur bg-[#0A0C10]/70 border-b border-white/10">
   <div class="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
     <a href="/" class="text-xs uppercase tracking-[0.2em] text-[#AAB6C6] font-mono">SYSTEM 174</a>
-    <div class="flex items-center gap-6">
+    <div class="hidden lg:flex items-center gap-6">
       {navLinks.map((link) => {
         const isActive = currentPath === link.href;
         return (
@@ -22,5 +22,33 @@ const { currentPath } = Astro.props;
         );
       })}
     </div>
+
+    <details class="relative lg:hidden group">
+      <summary class="list-none flex h-9 w-9 cursor-pointer items-center justify-center rounded border border-white/15 text-[#AAB6C6] hover:text-[#E7EDF6] hover:border-white/30 transition">
+        <span class="sr-only">Toggle navigation menu</span>
+        <svg class="h-5 w-5 group-open:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
+        </svg>
+        <svg class="hidden h-5 w-5 group-open:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M6 6l12 12M18 6l-12 12" stroke-linecap="round" />
+        </svg>
+      </summary>
+      <div class="absolute right-0 top-11 w-[min(18rem,calc(100vw-2.5rem))] rounded-xl border border-white/10 bg-[#0F131A]/95 p-2 shadow-[0_16px_48px_rgba(0,0,0,0.45)]">
+        {navLinks.map((link) => {
+          const isActive = currentPath === link.href;
+          return (
+            <a
+              href={link.href}
+              class:list={[
+                "block rounded-lg px-3 py-2 text-sm text-[#AAB6C6] hover:text-[#E7EDF6] hover:bg-white/5 transition",
+                isActive && "text-[#E7EDF6] bg-white/5",
+              ]}
+            >
+              {link.label}
+            </a>
+          );
+        })}
+      </div>
+    </details>
   </div>
 </nav>

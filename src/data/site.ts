@@ -4,9 +4,39 @@ export const navLinks = [
   { href: "/", label: "Home" },
   { href: "/music", label: "Music" },
   { href: "/playlists", label: "Playlists" },
-  { href: "/shows", label: "Shows" },
-  { href: "/media", label: "Media" },
+
   { href: "/contact", label: "Contact" },
+];
+
+export const homepageSelectedTracks = [
+  {
+    title: "Chasing Shadows",
+    href: "/playlists?genre=Drum+%26+Bass&playlist=2199354848",
+    soundcloudUrl: "https://soundcloud.com/",
+    artworkUrl: "",
+    genre: "Drum & Bass",
+  },
+  {
+    title: "Track Two",
+    href: "https://soundcloud.com/",
+    soundcloudUrl: "https://soundcloud.com/",
+    artworkUrl: "",
+    genre: "",
+  },
+  {
+    title: "Track Three",
+    href: "https://soundcloud.com/",
+    soundcloudUrl: "https://soundcloud.com/",
+    artworkUrl: "",
+    genre: "",
+  },
+  {
+    title: "Track Four",
+    href: "https://soundcloud.com/",
+    soundcloudUrl: "https://soundcloud.com/",
+    artworkUrl: "",
+    genre: "",
+  },
 ];
 
 export const releases = [

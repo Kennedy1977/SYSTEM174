@@ -4,7 +4,6 @@ import Section from "../components/Section.astro";
 import Card from "../components/Card.astro";
 import ButtonPrimary from "../components/ButtonPrimary.astro";
 import FormField from "../components/FormField.astro";
-import { socials } from "../data/site";
 ---
 
 <BaseLayout title="System 174 | Contact">
@@ -23,17 +22,9 @@ import { socials } from "../data/site";
       </div>
       <div class="md:col-span-5 space-y-6">
         <Card>
-          <p class="text-xs uppercase tracking-[0.2em] text-[#AAB6C6] font-mono">Socials</p>
-          <div class="mt-4 space-y-3">
-            {socials.map((social) => (
-              <a href={social.href} class="block text-sm text-[#AAB6C6] hover:text-[#E7EDF6] transition duration-150 ease-out">{social.label}</a>
-            ))}
-          </div>
-        </Card>
-        <Card>
           <p class="text-xs uppercase tracking-[0.2em] text-[#AAB6C6] font-mono">Management</p>
           <p class="mt-3 text-sm text-[#AAB6C6]">UNIT 174 MANAGEMENT</p>
-          <p class="mt-1 text-sm text-[#E7EDF6]">mgmt@controlled-detonation.com</p>
+          <p class="mt-1 text-sm text-[#E7EDF6]">mgmt@umsl.co.uk</p>
         </Card>
       </div>
     </div>

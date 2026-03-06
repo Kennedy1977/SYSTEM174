@@ -1,27 +1,89 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Tosia Light";
+  src:
+    url("../webFonts/TosiaLight/font.woff2") format("woff2"),
+    url("../webFonts/TosiaLight/font.woff") format("woff");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Tosia Regular";
+  src:
+    url("../webFonts/TosiaRegular/font.woff2") format("woff2"),
+    url("../webFonts/TosiaRegular/font.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Tosia Bold";
+  src:
+    url("../webFonts/TosiaBold/font.woff2") format("woff2"),
+    url("../webFonts/TosiaBold/font.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Tosia Black";
+  src:
+    url("../webFonts/TosiaBlack/font.woff2") format("woff2"),
+    url("../webFonts/TosiaBlack/font.woff") format("woff");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
   html,
   body {
     min-height: 100%;
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   body {
-    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    font-family: "Tosia Regular", "Segoe UI", system-ui, sans-serif;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
   }
 }
 
 @layer utilities {
   .font-display {
-    font-family: "Sora", ui-sans-serif, system-ui;
+    font-family: "Tosia Light", ui-sans-serif, system-ui;
+    letter-spacing: 0.15ch;
   }
 
   .font-body {
-    font-family: "Inter", ui-sans-serif, system-ui;
+    font-family: "Tosia Regular", ui-sans-serif, system-ui;
+  }
+
+  .font-brand {
+    font-family: "Tosia Light", ui-sans-serif, system-ui;
+    letter-spacing: 0.15ch;
   }
 
   .label-ui {
-    font-family: "Inter", sans-serif;
+    font-family: "Tosia Regular", sans-serif;
     font-size: 11px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -95,6 +157,7 @@
     position: relative;
     z-index: 10;
     min-height: 100vh;
+    overflow-x: clip;
   }
 
   .hero-mask {

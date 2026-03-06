@@ -24,13 +24,16 @@ export const GET: APIRoute = async () => {
   }
 
   const data = await getSoundCloudDashboardData();
-  cache = { data, timestamp: now };
+  const hasData = Boolean(data.me || data.tracks.length || data.playlists.length);
+  if (hasData) {
+    cache = { data, timestamp: now };
+  }
 
   return new Response(JSON.stringify(data), {
     status: 200,
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=60",
+      "Cache-Control": hasData ? "public, max-age=60" : "no-store",
     },
   });
 };

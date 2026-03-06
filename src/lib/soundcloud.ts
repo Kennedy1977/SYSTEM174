@@ -5,9 +5,19 @@ const SC_API_BASE = "https://api.soundcloud.com";
 const SC_OAUTH_BASE = "https://secure.soundcloud.com";
 const DEV_TOKENS_PATH = path.resolve(process.cwd(), ".soundcloud.tokens.json");
 
-const CLIENT_ID = import.meta.env.SOUNDCLOUD_CLIENT_ID;
-const CLIENT_SECRET = import.meta.env.SOUNDCLOUD_CLIENT_SECRET;
-const REDIRECT_URI = import.meta.env.SOUNDCLOUD_REDIRECT_URI;
+const metaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {};
+
+function getEnvValue(key: string) {
+  return process.env[key] ?? metaEnv[key] ?? "";
+}
+
+function getAuthEnv() {
+  return {
+    clientId: getEnvValue("SOUNDCLOUD_CLIENT_ID"),
+    clientSecret: getEnvValue("SOUNDCLOUD_CLIENT_SECRET"),
+    redirectUri: getEnvValue("SOUNDCLOUD_REDIRECT_URI"),
+  };
+}
 
 type TokenState = {
   accessToken: string;
@@ -15,8 +25,8 @@ type TokenState = {
 };
 
 const tokenState: TokenState = {
-  accessToken: import.meta.env.SOUNDCLOUD_ACCESS_TOKEN ?? "",
-  refreshToken: import.meta.env.SOUNDCLOUD_REFRESH_TOKEN ?? "",
+  accessToken: getEnvValue("SOUNDCLOUD_ACCESS_TOKEN"),
+  refreshToken: getEnvValue("SOUNDCLOUD_REFRESH_TOKEN"),
 };
 
 export type SoundCloudTrack = {
@@ -66,7 +76,8 @@ type OAuthTokenResponse = {
 };
 
 function hasOAuthClientConfig() {
-  return Boolean(CLIENT_ID && CLIENT_SECRET && REDIRECT_URI);
+  const { clientId, clientSecret, redirectUri } = getAuthEnv();
+  return Boolean(clientId && clientSecret && redirectUri);
 }
 
 function hasAccessToken() {
@@ -74,10 +85,11 @@ function hasAccessToken() {
 }
 
 export function getSoundCloudAuthConfig() {
+  const { clientId, clientSecret, redirectUri } = getAuthEnv();
   return {
-    clientId: CLIENT_ID,
-    clientSecret: CLIENT_SECRET,
-    redirectUri: REDIRECT_URI,
+    clientId,
+    clientSecret,
+    redirectUri,
     hasClientConfig: hasOAuthClientConfig(),
     hasAccessToken: hasAccessToken(),
   };
@@ -98,14 +110,15 @@ async function writeDevTokensFile() {
 }
 
 export async function exchangeCodeForTokens(code: string, codeVerifier?: string) {
+  const { clientId, clientSecret, redirectUri } = getAuthEnv();
   if (!hasOAuthClientConfig()) {
     throw new Error("Missing SoundCloud OAuth client configuration");
   }
 
   const body = new URLSearchParams({
-    client_id: CLIENT_ID,
-    client_secret: CLIENT_SECRET,
-    redirect_uri: REDIRECT_URI,
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirect_uri: redirectUri,
     grant_type: "authorization_code",
     code,
   });
@@ -135,6 +148,7 @@ export async function exchangeCodeForTokens(code: string, codeVerifier?: string)
 }
 
 export async function refreshAccessToken() {
+  const { clientId, clientSecret } = getAuthEnv();
   if (!hasOAuthClientConfig()) {
     throw new Error("Missing SoundCloud OAuth client configuration");
   }
@@ -144,8 +158,8 @@ export async function refreshAccessToken() {
   }
 
   const body = new URLSearchParams({
-    client_id: CLIENT_ID,
-    client_secret: CLIENT_SECRET,
+    client_id: clientId,
+    client_secret: clientSecret,
     grant_type: "refresh_token",
     refresh_token: tokenState.refreshToken,
   });

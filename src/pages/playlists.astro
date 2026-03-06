@@ -213,7 +213,7 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
         </Card>
       ) : (
         <>
-          <div id="playlists-grid" class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div id="playlists-grid" class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {paginatedPlaylists.map((playlist) => (
               <article class="group rounded-2xl border border-white/10 bg-[#11151C]/60 overflow-hidden hover:border-[#5CC8FF]/40 transition duration-150 ease-out">
                 <a href={buildUrl({ playlist: playlist.id, page: null })} class="block" aria-label={`Open ${playlist.title}`}>
