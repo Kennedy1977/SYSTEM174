@@ -2,39 +2,395 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Section from "../components/Section.astro";
 import Card from "../components/Card.astro";
-import ReleaseCard from "../components/ReleaseCard.astro";
-import { releases } from "../data/site";
+import { getSoundCloudDashboardData } from "../lib/soundcloud";
 
-const filters = ["All", "EP", "Singles", "Mixes", "Remixes"];
+const soundcloud = await getSoundCloudDashboardData();
+const tracks = soundcloud.tracks;
+const playlists = soundcloud.playlists;
+const selectedGenre = (Astro.url.searchParams.get("genre") ?? "").trim();
+const selectedGenreKey = selectedGenre.toLowerCase();
+const remixParam = (Astro.url.searchParams.get("remix") ?? "off").trim().toLowerCase();
+const showRemix = remixParam === "on";
+const sortParam = (Astro.url.searchParams.get("sort") ?? "newest").trim().toLowerCase();
+const sortBy = sortParam === "plays" || sortParam === "likes" ? sortParam : "newest";
+const trackSearch = (Astro.url.searchParams.get("q") ?? "").trim();
+const trackSearchKey = trackSearch.toLowerCase();
+const TRACKS_PER_PAGE = 8;
+
+const rawPage = Number(Astro.url.searchParams.get("page") ?? "1");
+const requestedPage = Number.isFinite(rawPage) ? Math.max(1, Math.floor(rawPage)) : 1;
+
+const isCoverOrBootleg = (item: { title: string }) => {
+  const title = item.title.toLowerCase();
+  return title.includes("cover") || title.includes("bootleg");
+};
+
+const isPrivateTrack = (item: { sharing?: string | null }) => (item.sharing ?? "").toLowerCase() === "private";
+const isBlockedByAccess = (item: { access?: string | null }) =>
+  (item.access ?? "")
+    .toLowerCase()
+    .split(",")
+    .map((part) => part.trim())
+    .includes("blocked");
+
+const hasTrackWord = (item: { title: string }) => item.title.toLowerCase().includes("track");
+
+const isRemixTrack = (item: { title: string }) => item.title.toLowerCase().includes("remix");
+
+const curatedTracks = tracks.filter(
+  (track) =>
+    !isPrivateTrack(track) &&
+    !isBlockedByAccess(track) &&
+    !isCoverOrBootleg(track) &&
+    !hasTrackWord(track),
+);
+const remixFilteredTracks = curatedTracks.filter((track) => (showRemix ? isRemixTrack(track) : !isRemixTrack(track)));
+
+const allGenres = Array.from(
+  new Set(
+    [...tracks, ...playlists]
+      .map((item) => (item.genre ?? "").trim())
+      .filter(Boolean),
+  ),
+).sort((a, b) => a.localeCompare(b));
+
+const filteredTracks = selectedGenre
+  ? remixFilteredTracks.filter((track) => (track.genre ?? "").trim().toLowerCase() === selectedGenreKey)
+  : remixFilteredTracks;
+
+const sortedTracks = [...filteredTracks].sort((a, b) => {
+  if (sortBy === "plays") {
+    return (b.playback_count ?? 0) - (a.playback_count ?? 0);
+  }
+  if (sortBy === "likes") {
+    return (b.favoritings_count ?? 0) - (a.favoritings_count ?? 0);
+  }
+  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+});
+
+const searchedTracks = trackSearchKey
+  ? sortedTracks.filter((track) => track.title.toLowerCase().includes(trackSearchKey))
+  : sortedTracks;
+
+const totalTrackPages = Math.max(1, Math.ceil(searchedTracks.length / TRACKS_PER_PAGE));
+const currentTrackPage = Math.min(requestedPage, totalTrackPages);
+const trackStartIndex = (currentTrackPage - 1) * TRACKS_PER_PAGE;
+const paginatedTracks = searchedTracks.slice(trackStartIndex, trackStartIndex + TRACKS_PER_PAGE);
+
+const buildMusicUrl = (overrides?: { genre?: string | null; remix?: boolean; sort?: "newest" | "plays" | "likes"; q?: string | null; page?: number | null }) => {
+  const params = new URLSearchParams();
+  const genre = overrides?.genre === undefined ? selectedGenre : overrides.genre ?? "";
+  const remix = overrides?.remix === undefined ? showRemix : overrides.remix;
+  const sort = overrides?.sort === undefined ? sortBy : overrides.sort;
+  const q = overrides?.q === undefined ? trackSearch : overrides.q ?? "";
+  const page = overrides?.page === undefined ? null : overrides.page;
+
+  if (genre) params.set("genre", genre);
+  if (remix) params.set("remix", "on");
+  if (sort && sort !== "newest") params.set("sort", sort);
+  if (q) params.set("q", q);
+  if (page && page > 1) params.set("page", String(page));
+
+  const query = params.toString();
+  return query ? `/music?${query}` : "/music";
+};
+
+const genreFilters = [
+  { label: "All", href: buildMusicUrl({ genre: null, page: null }), active: !selectedGenre },
+  ...allGenres.map((genre) => ({
+    label: genre,
+    href: buildMusicUrl({ genre, page: null }),
+    active: genre.toLowerCase() === selectedGenreKey,
+  })),
+];
+
+const fallbackCoverUrl = "/textures/bg-main.png";
+const getPlayerUrl = (url: string) =>
+  `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%235CC8FF&auto_play=true&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=true&visual=false`;
+const initialInlinePlayerUrl = paginatedTracks[0]?.permalink_url
+  ? getPlayerUrl(paginatedTracks[0].permalink_url).replace("auto_play=true", "auto_play=false")
+  : "";
 ---
 
-<BaseLayout title="Controlled Detonation | Music">
-  <Section title="MUSIC" description="Catalog scan by format. All releases are available on major platforms.">
-    <div class="mb-6 flex flex-wrap gap-2">
-      {filters.map((filter, index) => (
-        <button
-          class:list={[
-            "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition duration-150 ease-out",
-            index === 0
-              ? "border border-[#B8FF2C]/70 text-[#E7EDF6] hover:border-[#B8FF2C] hover:bg-[#B8FF2C]/10 focus:outline-none focus:ring-2 focus:ring-[#B8FF2C]/60 focus:ring-offset-2 focus:ring-offset-[#0A0C10]"
-              : "bg-[#1A2230] border border-white/10 text-[#E7EDF6] hover:bg-[#1A2230]/80 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-[#B8FF2C]/40 focus:ring-offset-2 focus:ring-offset-[#0A0C10]",
-          ]}
-          type="button"
-        >
-          {filter}
-        </button>
-      ))}
+<BaseLayout title="System 174 | Music">
+  <Section title="MUSIC" description="Tracks are synced from your connected SoundCloud account.">
+    <div class="mb-10 rounded-2xl border border-white/10 bg-[#11151C]/70 p-5 sm:p-6">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p class="label-ui">Genre</p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            {genreFilters.map((filter) => (
+              <a
+                href={filter.href}
+                class:list={[
+                  "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
+                  filter.active
+                    ? "border-[#5CC8FF]/70 bg-[#5CC8FF]/10 text-[#E7EDF6] shadow-[0_0_0_1px_rgba(92,200,255,0.25)]"
+                    : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
+                ]}
+                aria-current={filter.active ? "true" : undefined}
+              >
+                {filter.label}
+              </a>
+            ))}
+          </div>
+        </div>
+        <div class="sm:text-right">
+          <p class="label-ui">Track Filter</p>
+          <div class="mt-3 flex flex-wrap justify-start gap-2 sm:justify-end">
+            <a
+              href={buildMusicUrl({ remix: !showRemix, page: null })}
+              class:list={[
+                "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
+                showRemix
+                  ? "border-[#5CC8FF]/70 bg-[#5CC8FF]/10 text-[#E7EDF6] shadow-[0_0_0_1px_rgba(92,200,255,0.25)]"
+                  : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
+              ]}
+            >
+              Remix {showRemix ? "On" : "Off"}
+            </a>
+          </div>
+          <div class="mt-2 flex flex-wrap justify-start gap-2 sm:justify-end">
+            <a
+              href={buildMusicUrl({ sort: "newest", page: null })}
+              class:list={[
+                "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
+                sortBy === "newest"
+                  ? "border-[#5CC8FF]/70 bg-[#5CC8FF]/10 text-[#E7EDF6] shadow-[0_0_0_1px_rgba(92,200,255,0.25)]"
+                  : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
+              ]}
+            >
+              Newest
+            </a>
+            <a
+              href={buildMusicUrl({ sort: "plays", page: null })}
+              class:list={[
+                "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
+                sortBy === "plays"
+                  ? "border-[#5CC8FF]/70 bg-[#5CC8FF]/10 text-[#E7EDF6] shadow-[0_0_0_1px_rgba(92,200,255,0.25)]"
+                  : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
+              ]}
+            >
+              Most Plays
+            </a>
+            <a
+              href={buildMusicUrl({ sort: "likes", page: null })}
+              class:list={[
+                "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
+                sortBy === "likes"
+                  ? "border-[#5CC8FF]/70 bg-[#5CC8FF]/10 text-[#E7EDF6] shadow-[0_0_0_1px_rgba(92,200,255,0.25)]"
+                  : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
+              ]}
+            >
+              Most Likes
+            </a>
+          </div>
+          <p class="mt-2 text-[11px] uppercase tracking-[0.12em] text-[#77849A]">Cover and Bootleg are always hidden</p>
+        </div>
+      </div>
     </div>
 
-    <div class="mb-6">
-      <Card>
-        <p class="text-xs uppercase tracking-[0.2em] text-[#AAB6C6] font-mono">Featured Release</p>
-        <div class="mt-4"><ReleaseCard release={releases[0]} featured={true} /></div>
-      </Card>
+    <div class="mb-12">
+      <iframe
+        id="inline-sc-player"
+        class="absolute h-0 w-0 opacity-0 pointer-events-none"
+        title="SoundCloud Inline Player"
+        src={initialInlinePlayerUrl}
+        loading="lazy"
+        allow="autoplay"
+      />
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <h3 class="font-display text-xl md:text-2xl tracking-[-0.01em] uppercase">Tracks</h3>
+        <form method="get" action="/music" class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row" data-live-search-form>
+          <input
+            type="search"
+            name="q"
+            id="track-search"
+            value={trackSearch}
+            placeholder="Search tracks"
+            class="w-full rounded-xl bg-[#0A0C10]/40 border border-white/10 px-3 py-2 text-sm text-[#E7EDF6] placeholder:text-[#77849A] focus:outline-none focus:ring-2 focus:ring-[#5CC8FF]/50 focus:border-[#5CC8FF]/50 sm:w-64"
+          />
+          <button
+            type="submit"
+            class="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold bg-[#1A2230] border border-white/10 text-[#E7EDF6] hover:bg-[#1A2230]/80 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-[#5CC8FF]/40 focus:ring-offset-2 focus:ring-offset-[#0A0C10] transition duration-150 ease-out"
+          >
+            Search
+          </button>
+          {trackSearch && (
+            <a
+              href="/music"
+              class="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold border border-white/10 text-[#AAB6C6] hover:text-[#E7EDF6] hover:border-white/20 transition duration-150 ease-out"
+            >
+              Clear
+            </a>
+          )}
+        </form>
+      </div>
+      {searchedTracks.length === 0 ? (
+        <Card>
+          <p class="font-body text-[15px] leading-relaxed text-[#AAB6C6]">
+            No tracks match the current genre, remix, and search filters.
+          </p>
+        </Card>
+      ) : (
+        <>
+          <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {paginatedTracks.map((track) => (
+              <article class="group rounded-2xl border border-white/10 bg-[#11151C]/60 overflow-hidden hover:border-[#5CC8FF]/40 transition duration-150 ease-out">
+                <button
+                  type="button"
+                  data-sc-play={getPlayerUrl(track.permalink_url)}
+                  data-sc-pause={getPlayerUrl(track.permalink_url).replace("auto_play=true", "auto_play=false")}
+                  class="block w-full text-left"
+                  aria-label={`Play ${track.title}`}
+                >
+                  <div class="relative aspect-square w-full bg-[#1A2230] bg-cover bg-center" style={`background-image:url('${fallbackCoverUrl}')`}>
+                    {track.artwork_url ? (
+                      <img
+                        src={track.artwork_url}
+                        alt={track.title}
+                        onerror="this.style.display='none'"
+                        class="h-full w-full object-cover opacity-95 group-hover:opacity-100 transition duration-150 ease-out"
+                      />
+                    ) : null}
+                    <div class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 transition duration-150 ease-out group-hover:opacity-100">
+                      <span data-icon-toggle class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[#5CC8FF]/60 bg-[#0A0C10]/70 text-[#E7EDF6]">
+                        ▶
+                      </span>
+                    </div>
+                  </div>
+                </button>
+                <div class="p-3">
+                  <p class="text-sm font-semibold tracking-tight text-[#E7EDF6]">{track.title}</p>
+                  {track.genre && (
+                    <p class="mt-1 text-[11px] uppercase tracking-[0.18em] text-[#77849A]">{track.genre}</p>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+          {totalTrackPages > 1 && (
+            <div class="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#11151C]/70 p-3">
+              <a
+                href={buildMusicUrl({ page: currentTrackPage - 1 })}
+                class:list={[
+                  "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
+                  currentTrackPage <= 1
+                    ? "pointer-events-none border-white/10 text-[#77849A]"
+                    : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
+                ]}
+              >
+                Previous
+              </a>
+              <p class="text-xs uppercase tracking-[0.12em] text-[#AAB6C6]">
+                Page {currentTrackPage} / {totalTrackPages}
+              </p>
+              <a
+                href={buildMusicUrl({ page: currentTrackPage + 1 })}
+                class:list={[
+                  "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
+                  currentTrackPage >= totalTrackPages
+                    ? "pointer-events-none border-white/10 text-[#77849A]"
+                    : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
+                ]}
+              >
+                Next
+              </a>
+            </div>
+          )}
+        </>
+      )}
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-      {releases.map((release) => <ReleaseCard release={release} />)}
-    </div>
   </Section>
 </BaseLayout>
+
+<script is:inline>
+  (() => {
+    const form = document.querySelector("[data-live-search-form]");
+    if (!form) return;
+
+    const input = form.querySelector("#track-search");
+    if (!(input instanceof HTMLInputElement)) return;
+
+    let timer;
+
+    const navigateToSearch = () => {
+      const q = input.value.trim();
+      const url = new URL(window.location.href);
+      url.pathname = "/music";
+      url.search = "";
+      if (q) {
+        url.searchParams.set("q", q);
+      }
+      const target = `${url.pathname}${url.search}`;
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (target !== current) {
+        window.location.assign(target);
+      }
+    };
+
+    input.addEventListener("input", () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(navigateToSearch, 220);
+    });
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        window.clearTimeout(timer);
+        navigateToSearch();
+      }
+    });
+
+    const inlinePlayer = document.getElementById("inline-sc-player");
+    if (inlinePlayer instanceof HTMLIFrameElement) {
+      let currentPlayUrl = "";
+      let currentTrigger = null;
+
+      const setTriggerState = (trigger, playing) => {
+        const toggleIcon = trigger?.querySelector("[data-icon-toggle]");
+        const overlay = trigger?.querySelector(".pointer-events-none.absolute");
+        if (overlay instanceof HTMLElement) {
+          overlay.classList.toggle("opacity-100", playing);
+          overlay.classList.toggle("opacity-0", !playing);
+        }
+        if (toggleIcon instanceof HTMLElement) {
+          toggleIcon.textContent = playing ? "❚❚" : "▶";
+          toggleIcon.classList.toggle("border-[#5CC8FF]/70", playing);
+          toggleIcon.classList.toggle("bg-[#5CC8FF]/20", playing);
+          toggleIcon.classList.toggle("border-[#5CC8FF]/60", !playing);
+          toggleIcon.classList.toggle("bg-[#0A0C10]/70", !playing);
+        }
+      };
+
+      document.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const trigger = target.closest("[data-sc-play]");
+        if (!(trigger instanceof HTMLElement)) return;
+
+        const nextUrl = trigger.dataset.scPlay;
+        const pauseUrl = trigger.dataset.scPause;
+        if (!nextUrl || !pauseUrl) return;
+
+        if (currentPlayUrl === nextUrl) {
+          inlinePlayer.src = pauseUrl;
+          setTriggerState(trigger, false);
+          currentPlayUrl = "";
+          currentTrigger = null;
+          return;
+        }
+
+        if (currentTrigger) {
+          setTriggerState(currentTrigger, false);
+        }
+
+        inlinePlayer.src = nextUrl;
+        setTriggerState(trigger, true);
+        currentPlayUrl = nextUrl;
+        currentTrigger = trigger;
+      });
+    }
+  })();
+</script>

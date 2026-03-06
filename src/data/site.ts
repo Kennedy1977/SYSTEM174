@@ -1,8 +1,9 @@
-export const ACCENT = "#B8FF2C";
+export const ACCENT = "#5CC8FF";
 
 export const navLinks = [
   { href: "/", label: "Home" },
   { href: "/music", label: "Music" },
+  { href: "/playlists", label: "Playlists" },
   { href: "/shows", label: "Shows" },
   { href: "/media", label: "Media" },
   { href: "/contact", label: "Contact" },

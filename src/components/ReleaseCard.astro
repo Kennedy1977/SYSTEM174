@@ -3,7 +3,7 @@ const { release, featured = false } = Astro.props;
 ---
 
 <article class:list={[
-  "group rounded-2xl border border-white/10 bg-[#11151C]/60 overflow-hidden hover:border-[#B8FF2C]/40 transition duration-150 ease-out",
+  "group rounded-2xl border border-white/10 bg-[#11151C]/60 overflow-hidden hover:border-[#5CC8FF]/40 transition duration-150 ease-out",
   featured && "md:grid md:grid-cols-12 md:items-stretch",
 ]}>
   <div class:list={["aspect-square w-full object-cover opacity-95 group-hover:opacity-100 transition duration-150 ease-out bg-[#1A2230]", featured && "md:col-span-4 md:aspect-auto"]}></div>

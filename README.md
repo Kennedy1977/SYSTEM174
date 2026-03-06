@@ -1,43 +1,42 @@
-# Astro Starter Kit: Minimal
+# SYSTEM174
+
+Astro site configured for SSR with an Express runtime so it can be deployed to platforms that support Node.js/Express app detection.
+
+## Local development
 
 ```sh
-npm create astro@latest -- --template minimal
+npm install
+npm run dev
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Production build and run
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+```sh
+npm run build
+npm run start
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Environment variables
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+Copy `.env.example` to `.env` and fill in real values.
 
-Any static assets, like images, can be placed in the `public/` directory.
+Required:
 
-## 🧞 Commands
+- `SOUNDCLOUD_CLIENT_ID`
+- `SOUNDCLOUD_CLIENT_SECRET`
+- `SOUNDCLOUD_REDIRECT_URI`
+- `SOUNDCLOUD_ACCESS_TOKEN`
+- `SOUNDCLOUD_REFRESH_TOKEN`
 
-All commands are run from the root of the project, from a terminal:
+For staging on `system174.andrewkennedy.dev.com`, set:
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+- `SOUNDCLOUD_REDIRECT_URI=https://system174.andrewkennedy.dev.com/soundcloud/callback`
 
-## 👀 Want to learn more?
+Also add the same callback URL in your SoundCloud app settings.
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+## Hostinger deploy settings
+
+- Install command: `npm install`
+- Build command: `npm run build`
+- Start command: `npm run start`
+

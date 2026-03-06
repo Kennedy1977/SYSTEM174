@@ -1,0 +1,36 @@
+import type { APIRoute } from "astro";
+import { getSoundCloudDashboardData } from "../../lib/soundcloud";
+
+const CACHE_TTL_MS = 600 * 1000;
+
+type CacheEntry = {
+  data: Awaited<ReturnType<typeof getSoundCloudDashboardData>>;
+  timestamp: number;
+} | null;
+
+let cache: CacheEntry = null;
+
+export const GET: APIRoute = async () => {
+  const now = Date.now();
+
+  if (cache && now - cache.timestamp < CACHE_TTL_MS) {
+    return new Response(JSON.stringify(cache.data), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=60",
+      },
+    });
+  }
+
+  const data = await getSoundCloudDashboardData();
+  cache = { data, timestamp: now };
+
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "public, max-age=60",
+    },
+  });
+};
