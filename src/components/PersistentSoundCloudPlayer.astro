@@ -8,9 +8,9 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
   data-sc-footer-player
   transition:persist="persistent-soundcloud-player"
 >
-  <section class="pointer-events-auto mx-auto max-w-6xl overflow-hidden rounded-2xl border border-[#5CC8FF]/20 bg-[#0E1218]/95 shadow-[0_-16px_60px_rgba(0,0,0,0.45)] backdrop-blur">
-    <div class="grid gap-4 p-3 sm:grid-cols-[auto,minmax(0,1fr),auto] sm:items-center sm:px-4">
-      <div class="h-18 w-18 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#1A2230] sm:h-22 sm:w-22">
+  <section class="pointer-events-auto mx-auto max-w-6xl overflow-hidden rounded-xl border border-[#5CC8FF]/20 bg-[#0E1218]/95 shadow-[0_-16px_60px_rgba(0,0,0,0.45)] backdrop-blur">
+    <div class="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4 sm:py-3">
+      <div class="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-[#1A2230] sm:h-14 sm:w-14">
         <img
           id="persistent-soundcloud-player-artwork"
           src={fallbackArtworkUrl}
@@ -21,54 +21,63 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
         />
       </div>
 
-      <div class="min-w-0">
+      <div class="min-w-0 sm:w-[240px] sm:shrink-0">
         <p class="label-ui">Now Playing</p>
-        <div class="mt-2 flex flex-wrap items-center gap-3">
-          <p
-            id="persistent-soundcloud-player-title"
-            class="min-w-0 truncate font-display text-xl uppercase tracking-[0.12em] text-[#E7EDF6] sm:text-2xl"
-          >
-            Select a track
-          </p>
-          <button
-            type="button"
-            id="persistent-soundcloud-player-toggle"
-            class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#5CC8FF]/45 bg-[#5CC8FF]/10 text-[#E7EDF6] transition duration-150 ease-out hover:border-[#5CC8FF]/70 hover:bg-[#5CC8FF]/20"
-            aria-label="Pause current track"
-          >
-            <span id="persistent-soundcloud-player-toggle-icon" aria-hidden="true">❚❚</span>
-          </button>
-        </div>
+        <p
+          id="persistent-soundcloud-player-title"
+          class="mt-1 truncate font-display text-sm uppercase tracking-[0.1em] text-[#E7EDF6] sm:text-base"
+        >
+          Select a track
+        </p>
         <a
           id="persistent-soundcloud-player-link"
           href="#"
           target="_blank"
           rel="noreferrer"
-          class="mt-3 inline-flex text-[11px] font-semibold uppercase tracking-[0.18em] text-accent transition-colors hover:text-white"
+          class="mt-1 inline-flex text-[10px] font-semibold uppercase tracking-[0.16em] text-accent transition-colors hover:text-white"
         >
           Open on SoundCloud
         </a>
       </div>
 
-      <div class="min-w-0 sm:w-[220px]">
-        <div
-          id="persistent-soundcloud-player-progress"
-          class="group relative h-2 w-full overflow-hidden rounded-full bg-white/10"
-          role="slider"
-          tabindex="0"
-          aria-label="Track progress"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          aria-valuenow="0"
+      <div class="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+        <button
+          type="button"
+          id="persistent-soundcloud-player-toggle"
+          class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#5CC8FF]/45 bg-[#5CC8FF]/10 text-[#E7EDF6] transition duration-150 ease-out hover:border-[#5CC8FF]/70 hover:bg-[#5CC8FF]/20"
+          aria-label="Pause current track"
         >
+          <span id="persistent-soundcloud-player-toggle-icon" aria-hidden="true">❚❚</span>
+        </button>
+
+        <div class="flex min-w-0 flex-1 items-center gap-3">
+          <p
+            id="persistent-soundcloud-player-elapsed"
+            class="shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#91A0B7]"
+          >
+            00:00:00
+          </p>
           <div
-            id="persistent-soundcloud-player-progress-fill"
-            class="h-full w-0 rounded-full bg-[#5CC8FF] transition-[width] duration-150 ease-out"
-          />
-        </div>
-        <div class="mt-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.18em] text-[#91A0B7]">
-          <span id="persistent-soundcloud-player-elapsed">00:00:00</span>
-          <span id="persistent-soundcloud-player-duration">00:00:00</span>
+            id="persistent-soundcloud-player-progress"
+            class="group relative h-1.5 flex-1 overflow-hidden rounded-full bg-white/10"
+            role="slider"
+            tabindex="0"
+            aria-label="Track progress"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+          >
+            <div
+              id="persistent-soundcloud-player-progress-fill"
+              class="h-full w-0 rounded-full bg-[#5CC8FF] transition-[width] duration-150 ease-out"
+            />
+          </div>
+          <p
+            id="persistent-soundcloud-player-duration"
+            class="shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#91A0B7]"
+          >
+            00:00:00
+          </p>
         </div>
       </div>
     </div>
