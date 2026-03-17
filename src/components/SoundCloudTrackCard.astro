@@ -6,6 +6,7 @@ type Props = {
   fallbackCoverUrl: string;
   playUrl: string;
   pauseUrl: string;
+  trackHref?: string;
   openHref?: string;
   openLabel?: string;
 };
@@ -17,6 +18,7 @@ const {
   fallbackCoverUrl,
   playUrl,
   pauseUrl,
+  trackHref,
   openHref,
   openLabel = "OPEN",
 } = Astro.props as Props;
@@ -27,6 +29,9 @@ const {
     type="button"
     data-sc-play={playUrl}
     data-sc-pause={pauseUrl}
+    data-sc-title={title}
+    data-sc-artwork={artworkUrl ?? ""}
+    data-sc-href={trackHref ?? ""}
     class="block w-full text-left"
     aria-label={`Play ${title}`}
   >

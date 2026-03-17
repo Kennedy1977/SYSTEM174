@@ -70,11 +70,6 @@ const buildUrl = (overrides?: { genre?: string | null; q?: string | null; page?:
 const fallbackCoverUrl = "/textures/bg-main.png";
 const getPlayerUrl = (url: string) =>
   `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%235CC8FF&auto_play=true&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=true&visual=false`;
-const initialInlinePlayerUrl = selectedPlaylist?.permalink_url
-  ? getPlayerUrl(selectedPlaylist.permalink_url).replace("auto_play=true", "auto_play=false")
-  : paginatedPlaylists[0]?.permalink_url
-    ? getPlayerUrl(paginatedPlaylists[0].permalink_url).replace("auto_play=true", "auto_play=false")
-  : "";
 const clientPlaylistsJson = JSON.stringify(filteredPlaylists).replaceAll("<", "\\u003c");
 const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
   (track) => !isPrivateTrack(track) && !isBlockedByAccess(track),
@@ -118,15 +113,6 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
         </div>
       </div>
     )}
-
-    <iframe
-      id="inline-sc-player"
-      class="absolute h-0 w-0 opacity-0 pointer-events-none"
-      title="SoundCloud Inline Player"
-      src={initialInlinePlayerUrl}
-      loading="lazy"
-      allow="autoplay"
-    />
 
     <div class="mb-12">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -192,6 +178,8 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
                     type="button"
                     data-sc-play={getPlayerUrl(`https://api.soundcloud.com/tracks/${track.id}`)}
                     data-sc-pause={getPlayerUrl(`https://api.soundcloud.com/tracks/${track.id}`).replace("auto_play=true", "auto_play=false")}
+                    data-sc-title={track.title ?? `Track ${index + 1}`}
+                    data-sc-artwork={selectedPlaylist?.artwork_url ?? ""}
                     class="w-full text-left py-3 flex items-center justify-between gap-3 hover:bg-white/[0.02] transition duration-150 ease-out"
                     aria-label={`Play ${track.title ?? `Track ${index + 1}`}`}
                   >
@@ -382,51 +370,5 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
       });
     }
 
-    const inlinePlayer = document.getElementById("inline-sc-player");
-    if (inlinePlayer instanceof HTMLIFrameElement) {
-      let currentPlayUrl = "";
-      let currentTrigger = null;
-
-      const setTriggerState = (trigger, playing) => {
-        const toggleIcon = trigger?.querySelector("[data-icon-toggle]");
-        const overlay = trigger?.querySelector(".pointer-events-none.absolute");
-        if (overlay instanceof HTMLElement) {
-          overlay.classList.toggle("opacity-100", playing);
-          overlay.classList.toggle("opacity-0", !playing);
-        }
-        if (toggleIcon instanceof HTMLElement) {
-          toggleIcon.textContent = playing ? "❚❚" : "▶";
-          toggleIcon.classList.toggle("border-[#5CC8FF]/70", playing);
-          toggleIcon.classList.toggle("bg-[#5CC8FF]/20", playing);
-          toggleIcon.classList.toggle("border-[#5CC8FF]/60", !playing);
-          toggleIcon.classList.toggle("bg-[#0A0C10]/70", !playing);
-        }
-      };
-
-      document.addEventListener("click", (event) => {
-        const target = event.target;
-        if (!(target instanceof Element)) return;
-        const trigger = target.closest("[data-sc-play]");
-        if (!(trigger instanceof HTMLElement)) return;
-
-        const nextUrl = trigger.dataset.scPlay;
-        const pauseUrl = trigger.dataset.scPause;
-        if (!nextUrl || !pauseUrl) return;
-
-        if (currentPlayUrl === nextUrl) {
-          inlinePlayer.src = pauseUrl;
-          setTriggerState(trigger, false);
-          currentPlayUrl = "";
-          currentTrigger = null;
-          return;
-        }
-
-        if (currentTrigger) setTriggerState(currentTrigger, false);
-        inlinePlayer.src = nextUrl;
-        setTriggerState(trigger, true);
-        currentPlayUrl = nextUrl;
-        currentTrigger = trigger;
-      });
-    }
   })();
 </script>

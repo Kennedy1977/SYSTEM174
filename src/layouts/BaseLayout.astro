@@ -1,7 +1,9 @@
 ---
 import "../styles/global.css";
+import { ClientRouter } from "astro:transitions";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
+import PersistentSoundCloudPlayer from "../components/PersistentSoundCloudPlayer.astro";
 
 const { title, description = "Industrial pressure-driven artist site" } = Astro.props;
 ---
@@ -12,6 +14,7 @@ const { title, description = "Industrial pressure-driven artist site" } = Astro.
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
+    <ClientRouter />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -26,8 +29,11 @@ const { title, description = "Industrial pressure-driven artist site" } = Astro.
     <div class="site-bg-main"></div>
     <div class="site-content">
       <Nav currentPath={Astro.url.pathname} />
-      <slot />
+      <main class="flex-1">
+        <slot />
+      </main>
       <Footer />
     </div>
+    <PersistentSoundCloudPlayer />
   </body>
 </html>

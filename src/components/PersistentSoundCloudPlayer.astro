@@ -1,0 +1,254 @@
+---
+const fallbackArtworkUrl = "/textures/bg-main.png";
+---
+
+<div
+  id="persistent-soundcloud-player"
+  class="pointer-events-none fixed inset-x-0 bottom-0 z-[70] hidden px-3 pb-3 sm:px-5 sm:pb-4"
+  data-sc-footer-player
+  transition:persist="persistent-soundcloud-player"
+>
+  <section class="pointer-events-auto mx-auto max-w-6xl overflow-hidden rounded-2xl border border-[#5CC8FF]/20 bg-[#0E1218]/95 shadow-[0_-16px_60px_rgba(0,0,0,0.45)] backdrop-blur">
+    <div class="grid gap-3 border-b border-white/10 p-3 sm:grid-cols-[minmax(0,1fr),auto] sm:items-center sm:px-4">
+      <div class="flex min-w-0 items-center gap-3">
+        <div class="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#1A2230]">
+          <img
+            id="persistent-soundcloud-player-artwork"
+            src={fallbackArtworkUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            class="h-full w-full object-cover"
+          />
+        </div>
+        <div class="min-w-0">
+          <p class="label-ui">Now Playing</p>
+          <p
+            id="persistent-soundcloud-player-title"
+            class="truncate font-display text-sm uppercase tracking-[0.08em] text-[#E7EDF6] sm:text-base"
+          >
+            Select a track
+          </p>
+          <a
+            id="persistent-soundcloud-player-link"
+            href="#"
+            target="_blank"
+            rel="noreferrer"
+            class="mt-1 inline-flex text-[11px] font-semibold uppercase tracking-[0.12em] text-accent transition-colors hover:text-white"
+          >
+            Open on SoundCloud
+          </a>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          id="persistent-soundcloud-player-toggle"
+          class="inline-flex items-center justify-center rounded-xl border border-[#5CC8FF]/40 bg-[#5CC8FF]/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#E7EDF6] transition duration-150 ease-out hover:border-[#5CC8FF]/70 hover:bg-[#5CC8FF]/20"
+        >
+          Pause
+        </button>
+        <button
+          type="button"
+          id="persistent-soundcloud-player-close"
+          class="inline-flex items-center justify-center rounded-xl border border-white/10 bg-[#1A2230] px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#AAB6C6] transition duration-150 ease-out hover:border-white/20 hover:text-[#E7EDF6]"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+
+    <iframe
+      id="persistent-soundcloud-player-frame"
+      title="Persistent SoundCloud Player"
+      src="about:blank"
+      loading="lazy"
+      allow="autoplay"
+      class="block h-[110px] w-full border-0 bg-[#0A0C10]"
+      transition:persist="persistent-soundcloud-player-frame"
+    />
+  </section>
+</div>
+
+<script is:inline>
+  (() => {
+    const STORAGE_KEY = "system174.soundcloud.player";
+    const EMPTY_STATE = {
+      playUrl: "",
+      pauseUrl: "",
+      title: "",
+      artworkUrl: "",
+      href: "",
+      visible: false,
+      playing: false,
+    };
+    const fallbackArtworkUrl = "/textures/bg-main.png";
+
+    const readStoredState = () => {
+      try {
+        const raw = window.sessionStorage.getItem(STORAGE_KEY);
+        if (!raw) return { ...EMPTY_STATE };
+        const parsed = JSON.parse(raw);
+        return { ...EMPTY_STATE, ...(parsed && typeof parsed === "object" ? parsed : {}) };
+      } catch {
+        return { ...EMPTY_STATE };
+      }
+    };
+
+    const writeStoredState = (state) => {
+      try {
+        window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch {
+        // Ignore storage failures.
+      }
+    };
+
+    const setTriggerState = (trigger, playing) => {
+      const toggleIcon = trigger?.querySelector("[data-icon-toggle]");
+      const overlay = trigger?.querySelector(".pointer-events-none.absolute");
+
+      if (overlay instanceof HTMLElement) {
+        overlay.classList.toggle("opacity-100", playing);
+        overlay.classList.toggle("opacity-0", !playing);
+      }
+
+      if (toggleIcon instanceof HTMLElement) {
+        toggleIcon.textContent = playing ? "❚❚" : "▶";
+        toggleIcon.classList.toggle("border-[#5CC8FF]/70", playing);
+        toggleIcon.classList.toggle("bg-[#5CC8FF]/20", playing);
+        toggleIcon.classList.toggle("border-[#5CC8FF]/60", !playing);
+        toggleIcon.classList.toggle("bg-[#0A0C10]/70", !playing);
+      }
+    };
+
+    const syncTriggerStates = (state) => {
+      document.querySelectorAll("[data-sc-play]").forEach((node) => {
+        if (!(node instanceof HTMLElement)) return;
+        const isCurrent = Boolean(state.playing && state.playUrl && node.dataset.scPlay === state.playUrl);
+        setTriggerState(node, isCurrent);
+      });
+    };
+
+    const ensureController = () => {
+      const root = document.getElementById("persistent-soundcloud-player");
+      const frame = document.getElementById("persistent-soundcloud-player-frame");
+      const artwork = document.getElementById("persistent-soundcloud-player-artwork");
+      const title = document.getElementById("persistent-soundcloud-player-title");
+      const link = document.getElementById("persistent-soundcloud-player-link");
+      const toggle = document.getElementById("persistent-soundcloud-player-toggle");
+      const close = document.getElementById("persistent-soundcloud-player-close");
+
+      if (
+        !(root instanceof HTMLElement) ||
+        !(frame instanceof HTMLIFrameElement) ||
+        !(artwork instanceof HTMLImageElement) ||
+        !(title instanceof HTMLElement) ||
+        !(link instanceof HTMLAnchorElement) ||
+        !(toggle instanceof HTMLButtonElement) ||
+        !(close instanceof HTMLButtonElement)
+      ) {
+        return null;
+      }
+
+      return { root, frame, artwork, title, link, toggle, close };
+    };
+
+    const controller = ensureController();
+    if (!controller) return;
+
+    if (window.__system174SoundCloudPlayer) {
+      window.__system174SoundCloudPlayer.sync();
+      return;
+    }
+
+    let state = readStoredState();
+
+    const applyState = (nextState, options = {}) => {
+      const { updateFrame = true } = options;
+      state = { ...EMPTY_STATE, ...nextState };
+
+      controller.root.classList.toggle("hidden", !state.visible);
+      document.body.dataset.scFooterPlayer = state.visible ? "open" : "closed";
+
+      controller.title.textContent = state.title || "Select a track";
+      controller.artwork.src = state.artworkUrl || fallbackArtworkUrl;
+      controller.link.href = state.href || "#";
+      controller.link.classList.toggle("hidden", !state.href);
+      controller.toggle.textContent = state.playing ? "Pause" : "Resume";
+
+      if (updateFrame) {
+        const targetSrc = state.visible ? (state.playing ? state.playUrl : state.pauseUrl) : "about:blank";
+        if (controller.frame.src !== targetSrc) {
+          controller.frame.src = targetSrc;
+        }
+      }
+
+      writeStoredState(state);
+      syncTriggerStates(state);
+    };
+
+    const clearState = () => {
+      applyState({ ...EMPTY_STATE }, { updateFrame: false });
+      controller.frame.src = "about:blank";
+    };
+
+    const playFromTrigger = (trigger) => {
+      const playUrl = trigger.dataset.scPlay ?? "";
+      const pauseUrl = trigger.dataset.scPause ?? "";
+      if (!playUrl || !pauseUrl) return;
+
+      if (state.playUrl === playUrl) {
+        applyState(
+          {
+            ...state,
+            playing: !state.playing,
+            visible: true,
+          },
+          { updateFrame: true },
+        );
+        return;
+      }
+
+      applyState(
+        {
+          playUrl,
+          pauseUrl,
+          title: trigger.dataset.scTitle ?? "Selected Track",
+          artworkUrl: trigger.dataset.scArtwork ?? "",
+          href: trigger.dataset.scHref ?? "",
+          visible: true,
+          playing: true,
+        },
+        { updateFrame: true },
+      );
+    };
+
+    controller.toggle.addEventListener("click", () => {
+      if (!state.playUrl || !state.pauseUrl) return;
+      applyState({ ...state, playing: !state.playing, visible: true }, { updateFrame: true });
+    });
+
+    controller.close.addEventListener("click", () => {
+      clearState();
+    });
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const trigger = target.closest("[data-sc-play]");
+      if (!(trigger instanceof HTMLElement)) return;
+
+      playFromTrigger(trigger);
+    });
+
+    const sync = () => {
+      applyState(state, { updateFrame: false });
+    };
+
+    document.addEventListener("astro:page-load", sync);
+    window.__system174SoundCloudPlayer = { sync };
+    sync();
+  })();
+</script>
