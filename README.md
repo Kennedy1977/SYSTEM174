@@ -28,6 +28,14 @@ Required:
 - `SOUNDCLOUD_ACCESS_TOKEN`
 - `SOUNDCLOUD_REFRESH_TOKEN`
 
+Optional:
+
+- `SOUNDCLOUD_TOKENS_PATH`
+
+The app now refreshes SoundCloud tokens automatically and writes the latest access and refresh token pair to `.soundcloud.tokens.json` by default. On restart it will read that cache back in, so you do not need to manually re-authenticate after every token refresh.
+
+If your host clears the application filesystem on restart or deploy, point `SOUNDCLOUD_TOKENS_PATH` at a persistent writable location. If the host does not offer persistent storage, you will still need to reconnect SoundCloud after the token cache is lost.
+
 For staging on `system174.andrewkennedydev.com`, set:
 
 - `SOUNDCLOUD_REDIRECT_URI=https://system174.andrewkennedydev.com/soundcloud/callback`

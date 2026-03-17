@@ -1,10 +1,8 @@
-import { writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const SC_API_BASE = "https://api.soundcloud.com";
 const SC_OAUTH_BASE = "https://secure.soundcloud.com";
-const DEV_TOKENS_PATH = path.resolve(process.cwd(), ".soundcloud.tokens.json");
-
 const metaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {};
 
 function getEnvValue(key: string) {
@@ -19,6 +17,10 @@ function getAuthEnv() {
   };
 }
 
+function getTokensPath() {
+  return path.resolve(process.cwd(), getEnvValue("SOUNDCLOUD_TOKENS_PATH") || ".soundcloud.tokens.json");
+}
+
 type TokenState = {
   accessToken: string;
   refreshToken: string;
@@ -28,6 +30,16 @@ const tokenState: TokenState = {
   accessToken: getEnvValue("SOUNDCLOUD_ACCESS_TOKEN"),
   refreshToken: getEnvValue("SOUNDCLOUD_REFRESH_TOKEN"),
 };
+
+type PersistedTokenState = Partial<{
+  SOUNDCLOUD_ACCESS_TOKEN: string;
+  SOUNDCLOUD_REFRESH_TOKEN: string;
+  accessToken: string;
+  refreshToken: string;
+}>;
+
+let tokenBootstrapPromise: Promise<void> | null = null;
+let tokenRefreshPromise: Promise<void> | null = null;
 
 export type SoundCloudTrack = {
   id: number;
@@ -103,10 +115,42 @@ async function writeDevTokensFile() {
   };
 
   try {
-    await writeFile(DEV_TOKENS_PATH, JSON.stringify(payload, null, 2), "utf-8");
+    const tokensPath = getTokensPath();
+    await mkdir(path.dirname(tokensPath), { recursive: true });
+    await writeFile(tokensPath, JSON.stringify(payload, null, 2), "utf-8");
   } catch (error) {
-    console.warn("[soundcloud] unable to write local token cache", error);
+    console.warn("[soundcloud] unable to write token cache", error);
   }
+}
+
+async function loadPersistedTokens() {
+  if (tokenBootstrapPromise) {
+    await tokenBootstrapPromise;
+    return;
+  }
+
+  tokenBootstrapPromise = (async () => {
+    try {
+      const raw = await readFile(getTokensPath(), "utf-8");
+      const parsed = JSON.parse(raw) as PersistedTokenState;
+      const accessToken = parsed.SOUNDCLOUD_ACCESS_TOKEN ?? parsed.accessToken ?? "";
+      const refreshToken = parsed.SOUNDCLOUD_REFRESH_TOKEN ?? parsed.refreshToken ?? "";
+
+      if (accessToken) {
+        tokenState.accessToken = accessToken;
+      }
+
+      if (refreshToken) {
+        tokenState.refreshToken = refreshToken;
+      }
+    } catch (error) {
+      if ((error as { code?: string }).code !== "ENOENT") {
+        console.warn("[soundcloud] unable to read token cache", error);
+      }
+    }
+  })();
+
+  await tokenBootstrapPromise;
 }
 
 export async function exchangeCodeForTokens(code: string, codeVerifier?: string) {
@@ -144,49 +188,66 @@ export async function exchangeCodeForTokens(code: string, codeVerifier?: string)
   tokenState.refreshToken = json.refresh_token ?? tokenState.refreshToken;
 
   await writeDevTokensFile();
-  console.info("[soundcloud] received OAuth tokens; copy values from .soundcloud.tokens.json into .env");
+  console.info("[soundcloud] received OAuth tokens and updated the token cache");
 }
 
 export async function refreshAccessToken() {
-  const { clientId, clientSecret } = getAuthEnv();
-  if (!hasOAuthClientConfig()) {
-    throw new Error("Missing SoundCloud OAuth client configuration");
+  await loadPersistedTokens();
+
+  if (tokenRefreshPromise) {
+    await tokenRefreshPromise;
+    return;
   }
 
-  if (!tokenState.refreshToken) {
-    throw new Error("Missing SoundCloud refresh token");
+  tokenRefreshPromise = (async () => {
+    const { clientId, clientSecret } = getAuthEnv();
+    if (!hasOAuthClientConfig()) {
+      throw new Error("Missing SoundCloud OAuth client configuration");
+    }
+
+    if (!tokenState.refreshToken) {
+      throw new Error("Missing SoundCloud refresh token");
+    }
+
+    const body = new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      grant_type: "refresh_token",
+      refresh_token: tokenState.refreshToken,
+    });
+
+    const response = await fetch(`${SC_OAUTH_BASE}/oauth/token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(`SoundCloud token refresh failed (${response.status}): ${detail}`);
+    }
+
+    const json = (await response.json()) as OAuthTokenResponse;
+    tokenState.accessToken = json.access_token;
+    tokenState.refreshToken = json.refresh_token ?? tokenState.refreshToken;
+
+    await writeDevTokensFile();
+  })();
+
+  try {
+    await tokenRefreshPromise;
+  } finally {
+    tokenRefreshPromise = null;
   }
-
-  const body = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    grant_type: "refresh_token",
-    refresh_token: tokenState.refreshToken,
-  });
-
-  const response = await fetch(`${SC_OAUTH_BASE}/oauth/token`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body,
-  });
-
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(`SoundCloud token refresh failed (${response.status}): ${detail}`);
-  }
-
-  const json = (await response.json()) as OAuthTokenResponse;
-  tokenState.accessToken = json.access_token;
-  tokenState.refreshToken = json.refresh_token ?? tokenState.refreshToken;
-
-  await writeDevTokensFile();
 }
 
 export async function scRequest(pathname: string, init?: RequestInit) {
+  await loadPersistedTokens();
+
   if (!hasAccessToken()) {
-    throw new Error("Missing SoundCloud access token");
+    await refreshAccessToken();
   }
 
   const makeRequest = async () => {
@@ -237,7 +298,9 @@ export async function getMyPlaylists(limit = 12) {
 }
 
 export async function getSoundCloudDashboardData(): Promise<SoundCloudDashboardData> {
-  if (!hasOAuthClientConfig() || !hasAccessToken()) {
+  await loadPersistedTokens();
+
+  if (!hasOAuthClientConfig() || (!tokenState.accessToken && !tokenState.refreshToken)) {
     return {
       me: null,
       tracks: [],
