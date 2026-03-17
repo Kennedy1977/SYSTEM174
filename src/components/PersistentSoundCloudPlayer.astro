@@ -8,7 +8,10 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
   data-sc-footer-player
   transition:persist="persistent-soundcloud-player"
 >
-  <section class="pointer-events-auto mx-auto max-w-6xl overflow-hidden rounded-xl border border-[#5CC8FF]/20 bg-[#0E1218]/95 shadow-[0_-16px_60px_rgba(0,0,0,0.45)] backdrop-blur">
+  <section
+    id="persistent-soundcloud-player-shell"
+    class="pointer-events-auto mx-auto max-w-6xl overflow-hidden rounded-xl border border-[#5CC8FF]/20 bg-[#0E1218]/95 opacity-0 shadow-[0_-16px_60px_rgba(0,0,0,0.45)] backdrop-blur translate-y-3 transition duration-300 ease-out"
+  >
     <div class="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4 sm:py-3">
       <div class="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-[#1A2230] sm:h-14 sm:w-14">
         <img
@@ -99,6 +102,8 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
     const STORAGE_KEY = "system174.soundcloud.player";
     const WIDGET_SCRIPT_SELECTOR = 'script[data-sc-widget-api="true"]';
     const WIDGET_SCRIPT_SRC = "https://w.soundcloud.com/player/api.js";
+    const HIDE_DELAY_MS = 10000;
+    const FADE_DURATION_MS = 300;
     const EMPTY_STATE = {
       sourceUrl: "",
       title: "",
@@ -205,6 +210,7 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
 
     const ensureController = () => {
       const root = document.getElementById("persistent-soundcloud-player");
+      const shell = document.getElementById("persistent-soundcloud-player-shell");
       const frame = document.getElementById("persistent-soundcloud-player-frame");
       const artwork = document.getElementById("persistent-soundcloud-player-artwork");
       const title = document.getElementById("persistent-soundcloud-player-title");
@@ -218,6 +224,7 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
 
       if (
         !(root instanceof HTMLElement) ||
+        !(shell instanceof HTMLElement) ||
         !(frame instanceof HTMLIFrameElement) ||
         !(artwork instanceof HTMLImageElement) ||
         !(title instanceof HTMLElement) ||
@@ -234,6 +241,7 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
 
       return {
         root,
+        shell,
         frame,
         artwork,
         title,
@@ -259,10 +267,60 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
     let widget = null;
     let widgetApiPromise = null;
     let widgetBound = false;
+    let hideDelayTimer = null;
+    let hideFadeTimer = null;
+
+    const clearHideTimers = () => {
+      if (hideDelayTimer) {
+        window.clearTimeout(hideDelayTimer);
+        hideDelayTimer = null;
+      }
+
+      if (hideFadeTimer) {
+        window.clearTimeout(hideFadeTimer);
+        hideFadeTimer = null;
+      }
+    };
+
+    const showPlayer = () => {
+      clearHideTimers();
+      controller.root.classList.remove("hidden");
+      document.body.dataset.scFooterPlayer = "open";
+
+      window.requestAnimationFrame(() => {
+        controller.shell.classList.remove("opacity-0", "translate-y-3");
+        controller.shell.classList.add("opacity-100", "translate-y-0");
+      });
+    };
+
+    const hidePlayer = () => {
+      clearHideTimers();
+      controller.shell.classList.remove("opacity-100", "translate-y-0");
+      controller.shell.classList.add("opacity-0", "translate-y-3");
+      hideFadeTimer = window.setTimeout(() => {
+        controller.root.classList.add("hidden");
+        document.body.dataset.scFooterPlayer = "closed";
+        hideFadeTimer = null;
+      }, FADE_DURATION_MS);
+    };
+
+    const scheduleHide = () => {
+      clearHideTimers();
+      hideDelayTimer = window.setTimeout(() => {
+        state = { ...state, visible: false };
+        writeStoredState(state);
+        syncTriggerStates(state);
+        hidePlayer();
+        hideDelayTimer = null;
+      }, HIDE_DELAY_MS);
+    };
 
     const renderState = ({ persist = true } = {}) => {
-      controller.root.classList.toggle("hidden", !state.visible);
-      document.body.dataset.scFooterPlayer = state.visible ? "open" : "closed";
+      if (state.visible) {
+        showPlayer();
+      } else {
+        hidePlayer();
+      }
 
       controller.title.textContent = state.title || "Select a track";
       controller.artwork.src = state.artworkUrl || fallbackArtworkUrl;
@@ -358,10 +416,14 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
         });
         widget.isPaused((paused) => {
           updateState({ playing: !paused, visible: true }, { persist: true });
+          if (paused) {
+            scheduleHide();
+          }
         });
       });
 
       widget.bind(window.SC.Widget.Events.PLAY, () => {
+        clearHideTimers();
         updateState({ playing: true, visible: true }, { persist: true });
         refreshFromCurrentSound();
         refreshDuration();
@@ -369,6 +431,7 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
 
       widget.bind(window.SC.Widget.Events.PAUSE, () => {
         updateState({ playing: false, visible: true }, { persist: true });
+        scheduleHide();
       });
 
       widget.bind(window.SC.Widget.Events.PLAY_PROGRESS, (event) => {
@@ -393,6 +456,7 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
           },
           { persist: true },
         );
+        scheduleHide();
       });
     };
 
@@ -435,6 +499,7 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
 
       if (state.sourceUrl === sourceUrl) {
         try {
+          clearHideTimers();
           if (widget) {
             if (state.playing) {
               widget.pause();
@@ -463,6 +528,7 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
       );
 
       try {
+        clearHideTimers();
         await loadSource(sourceUrl, { autoPlay: true });
       } catch (error) {
         console.error("[soundcloud] unable to load widget source", error);
@@ -473,6 +539,7 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
       if (!state.sourceUrl) return;
 
       try {
+        clearHideTimers();
         if (!widget) {
           await loadSource(state.sourceUrl, { autoPlay: !state.playing });
           updateState({ playing: !state.playing, visible: true }, { persist: true });
@@ -540,6 +607,9 @@ const fallbackArtworkUrl = "/textures/bg-main.png";
 
     const sync = () => {
       renderState({ persist: false });
+      if (state.visible && !state.playing) {
+        scheduleHide();
+      }
     };
 
     document.addEventListener("astro:page-load", sync);
