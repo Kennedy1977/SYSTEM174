@@ -230,6 +230,7 @@ const fallbackCoverUrl = "/textures/bg-main.png";
                 genre={track.genre}
                 artworkUrl={track.artwork_url}
                 fallbackCoverUrl={fallbackCoverUrl}
+                sourceUrl={track.permalink_url}
                 playUrl={getSoundCloudPlayerUrl(track.permalink_url)}
                 pauseUrl={getSoundCloudPlayerUrl(track.permalink_url, false)}
                 trackHref={track.permalink_url}

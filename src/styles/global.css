@@ -143,12 +143,12 @@
   }
 
   body[data-sc-footer-player="open"] .site-content {
-    padding-bottom: 12rem;
+    padding-bottom: 10rem;
   }
 
   @media (max-width: 640px) {
     body[data-sc-footer-player="open"] .site-content {
-      padding-bottom: 14rem;
+      padding-bottom: 13rem;
     }
   }
 

@@ -99,6 +99,7 @@ const selectedTracks = soundcloud.tracks
             genre={track.genre}
             artworkUrl={track.artworkUrl}
             fallbackCoverUrl={fallbackCoverUrl}
+            sourceUrl={track.soundcloudUrl || track.href}
             playUrl={getSoundCloudPlayerUrl(track.soundcloudUrl || track.href)}
             pauseUrl={getSoundCloudPlayerUrl(track.soundcloudUrl || track.href, false)}
             trackHref={track.soundcloudUrl || track.href}

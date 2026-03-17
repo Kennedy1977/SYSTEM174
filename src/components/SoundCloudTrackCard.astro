@@ -4,6 +4,7 @@ type Props = {
   genre?: string | null;
   artworkUrl?: string | null;
   fallbackCoverUrl: string;
+  sourceUrl?: string;
   playUrl: string;
   pauseUrl: string;
   trackHref?: string;
@@ -16,6 +17,7 @@ const {
   genre,
   artworkUrl,
   fallbackCoverUrl,
+  sourceUrl,
   playUrl,
   pauseUrl,
   trackHref,
@@ -27,6 +29,7 @@ const {
 <article class="group rounded-2xl border border-white/10 bg-[#11151C]/60 overflow-hidden hover:border-[#5CC8FF]/40 transition duration-150 ease-out">
   <button
     type="button"
+    data-sc-source={sourceUrl ?? trackHref ?? ""}
     data-sc-play={playUrl}
     data-sc-pause={pauseUrl}
     data-sc-title={title}

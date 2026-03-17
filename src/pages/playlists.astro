@@ -176,6 +176,7 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
                 {selectedPlaylistVisibleTracks.map((track, index) => (
                   <button
                     type="button"
+                    data-sc-source={`https://api.soundcloud.com/tracks/${track.id}`}
                     data-sc-play={getPlayerUrl(`https://api.soundcloud.com/tracks/${track.id}`)}
                     data-sc-pause={getPlayerUrl(`https://api.soundcloud.com/tracks/${track.id}`).replace("auto_play=true", "auto_play=false")}
                     data-sc-title={track.title ?? `Track ${index + 1}`}
