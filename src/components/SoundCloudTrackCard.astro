@@ -35,6 +35,8 @@ const {
         <img
           src={artworkUrl}
           alt={title}
+          loading="lazy"
+          decoding="async"
           onerror="this.style.display='none'"
           class="h-full w-full object-cover opacity-95 group-hover:opacity-100 transition duration-150 ease-out"
         />

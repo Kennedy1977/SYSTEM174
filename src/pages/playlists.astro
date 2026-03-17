@@ -222,6 +222,8 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
                       <img
                         src={playlist.artwork_url}
                         alt={playlist.title}
+                        loading="lazy"
+                        decoding="async"
                         onerror="this.style.display='none'"
                         class="h-full w-full object-cover opacity-95 group-hover:opacity-100 transition duration-150 ease-out"
                       />
@@ -305,7 +307,7 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
             <div class="relative aspect-square w-full bg-[#1A2230] bg-cover bg-center" style="background-image:url('/textures/bg-main.png')">
               ${
                 playlist.artwork_url
-                  ? `<img src="${escapeHtml(playlist.artwork_url)}" alt="${escapeHtml(playlist.title)}" onerror="this.style.display='none'" class="h-full w-full object-cover opacity-95 group-hover:opacity-100 transition duration-150 ease-out" />`
+                  ? `<img src="${escapeHtml(playlist.artwork_url)}" alt="${escapeHtml(playlist.title)}" loading="lazy" decoding="async" onerror="this.style.display='none'" class="h-full w-full object-cover opacity-95 group-hover:opacity-100 transition duration-150 ease-out" />`
                   : ""
               }
               <div class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 transition duration-150 ease-out group-hover:opacity-100">

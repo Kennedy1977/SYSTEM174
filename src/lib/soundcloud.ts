@@ -87,6 +87,159 @@ type OAuthTokenResponse = {
   refresh_token?: string;
 };
 
+function asObject(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function getString(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function getNullableString(value: unknown) {
+  return typeof value === "string" ? value : null;
+}
+
+function getOptionalNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  return null;
+}
+
+function getRequiredNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  return 0;
+}
+
+function hasSecretToken(url: string) {
+  return url.includes("secret_token=") || /\/s-[A-Za-z0-9]+/.test(url);
+}
+
+function getHighResArtworkUrl(url: string | null) {
+  if (!url) {
+    return null;
+  }
+
+  const [pathname, search = ""] = url.split("?");
+  const upgradedPathname = pathname.replace(
+    /-(?:tiny|small|badge|t67x67|large|t300x300|crop|t500x500|original)\.(jpg|jpeg|png|webp)$/i,
+    "-t500x500.$1",
+  );
+
+  if (!search) {
+    return upgradedPathname;
+  }
+
+  return `${upgradedPathname}?${search}`;
+}
+
+function isPublicSoundCloudItem(value: unknown) {
+  const item = asObject(value);
+  if (!item) {
+    return false;
+  }
+
+  const sharing = getString(item.sharing).toLowerCase();
+  if (sharing === "private") {
+    return false;
+  }
+
+  const access = getString(item.access)
+    .toLowerCase()
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (access.includes("blocked") || access.includes("private")) {
+    return false;
+  }
+
+  const secretUri = getString(item.secret_uri);
+  if (secretUri) {
+    return false;
+  }
+
+  const permalinkUrl = getString(item.permalink_url);
+  if (permalinkUrl && hasSecretToken(permalinkUrl)) {
+    return false;
+  }
+
+  return true;
+}
+
+function sanitizeMe(value: unknown): SoundCloudMe | null {
+  const me = asObject(value);
+  if (!me) {
+    return null;
+  }
+
+  return {
+    id: getRequiredNumber(me.id),
+    username: getString(me.username),
+    avatar_url: getHighResArtworkUrl(getNullableString(me.avatar_url)),
+    permalink_url: getString(me.permalink_url),
+  };
+}
+
+function sanitizeTrack(value: unknown): SoundCloudTrack | null {
+  const track = asObject(value);
+  if (!track || !isPublicSoundCloudItem(track)) {
+    return null;
+  }
+
+  return {
+    id: getRequiredNumber(track.id),
+    title: getString(track.title),
+    genre: getNullableString(track.genre),
+    sharing: getNullableString(track.sharing),
+    access: getNullableString(track.access),
+    playback_count: getOptionalNumber(track.playback_count),
+    favoritings_count: getOptionalNumber(track.favoritings_count),
+    artwork_url: getHighResArtworkUrl(getNullableString(track.artwork_url)),
+    permalink_url: getString(track.permalink_url),
+    created_at: getString(track.created_at),
+  };
+}
+
+function sanitizePlaylistTrack(value: unknown) {
+  const track = asObject(value);
+  if (!track || !isPublicSoundCloudItem(track)) {
+    return null;
+  }
+
+  return {
+    id: getRequiredNumber(track.id),
+    title: getString(track.title) || undefined,
+    sharing: getNullableString(track.sharing),
+    access: getNullableString(track.access),
+  };
+}
+
+function sanitizePlaylist(value: unknown): SoundCloudPlaylist | null {
+  const playlist = asObject(value);
+  if (!playlist || !isPublicSoundCloudItem(playlist)) {
+    return null;
+  }
+
+  const tracks = Array.isArray(playlist.tracks)
+    ? playlist.tracks.map((track) => sanitizePlaylistTrack(track)).filter(Boolean)
+    : undefined;
+
+  return {
+    id: getRequiredNumber(playlist.id),
+    title: getString(playlist.title),
+    genre: getNullableString(playlist.genre),
+    artwork_url: getHighResArtworkUrl(getNullableString(playlist.artwork_url)),
+    permalink_url: getString(playlist.permalink_url),
+    created_at: getString(playlist.created_at),
+    tracks,
+  };
+}
+
 function hasOAuthClientConfig() {
   const { clientId, clientSecret, redirectUri } = getAuthEnv();
   return Boolean(clientId && clientSecret && redirectUri);
@@ -276,25 +429,21 @@ export async function scRequest(pathname: string, init?: RequestInit) {
 
 export async function getMe() {
   const response = await scRequest("/me");
-  return (await response.json()) as SoundCloudMe;
+  return sanitizeMe(await response.json());
 }
 
 export async function getMyTracks(limit = 12) {
   const response = await scRequest(`/me/tracks?limit=${limit}&linked_partitioning=1`);
-  const json = (await response.json()) as { collection?: SoundCloudTrack[] } | SoundCloudTrack[];
-  if (Array.isArray(json)) {
-    return json;
-  }
-  return json.collection ?? [];
+  const json = (await response.json()) as { collection?: unknown[] } | unknown[];
+  const collection = Array.isArray(json) ? json : json.collection ?? [];
+  return collection.map((track) => sanitizeTrack(track)).filter(Boolean);
 }
 
 export async function getMyPlaylists(limit = 12) {
   const response = await scRequest(`/me/playlists?limit=${limit}&linked_partitioning=1`);
-  const json = (await response.json()) as { collection?: SoundCloudPlaylist[] } | SoundCloudPlaylist[];
-  if (Array.isArray(json)) {
-    return json;
-  }
-  return json.collection ?? [];
+  const json = (await response.json()) as { collection?: unknown[] } | unknown[];
+  const collection = Array.isArray(json) ? json : json.collection ?? [];
+  return collection.map((playlist) => sanitizePlaylist(playlist)).filter(Boolean);
 }
 
 export async function getSoundCloudDashboardData(): Promise<SoundCloudDashboardData> {
