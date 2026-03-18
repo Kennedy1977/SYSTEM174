@@ -276,34 +276,65 @@ async function writeDevTokensFile() {
   }
 }
 
-async function loadPersistedTokens() {
-  if (tokenBootstrapPromise) {
+async function readPersistedTokensFromDisk() {
+  try {
+    const raw = await readFile(getTokensPath(), "utf-8");
+    const parsed = JSON.parse(raw) as PersistedTokenState;
+    return {
+      accessToken: parsed.SOUNDCLOUD_ACCESS_TOKEN ?? parsed.accessToken ?? "",
+      refreshToken: parsed.SOUNDCLOUD_REFRESH_TOKEN ?? parsed.refreshToken ?? "",
+    };
+  } catch (error) {
+    if ((error as { code?: string }).code !== "ENOENT") {
+      console.warn("[soundcloud] unable to read token cache", error);
+    }
+
+    return null;
+  }
+}
+
+async function loadPersistedTokens(force = false) {
+  if (!force && tokenBootstrapPromise) {
     await tokenBootstrapPromise;
     return;
   }
 
   tokenBootstrapPromise = (async () => {
-    try {
-      const raw = await readFile(getTokensPath(), "utf-8");
-      const parsed = JSON.parse(raw) as PersistedTokenState;
-      const accessToken = parsed.SOUNDCLOUD_ACCESS_TOKEN ?? parsed.accessToken ?? "";
-      const refreshToken = parsed.SOUNDCLOUD_REFRESH_TOKEN ?? parsed.refreshToken ?? "";
+    const persisted = await readPersistedTokensFromDisk();
 
-      if (accessToken) {
-        tokenState.accessToken = accessToken;
-      }
+    if (!persisted) {
+      return;
+    }
 
-      if (refreshToken) {
-        tokenState.refreshToken = refreshToken;
-      }
-    } catch (error) {
-      if ((error as { code?: string }).code !== "ENOENT") {
-        console.warn("[soundcloud] unable to read token cache", error);
-      }
+    if (persisted.accessToken) {
+      tokenState.accessToken = persisted.accessToken;
+    }
+
+    if (persisted.refreshToken) {
+      tokenState.refreshToken = persisted.refreshToken;
     }
   })();
 
   await tokenBootstrapPromise;
+}
+
+async function requestTokenRefresh(refreshToken: string) {
+  const { clientId, clientSecret } = getAuthEnv();
+
+  const body = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+  });
+
+  return fetch(`${SC_OAUTH_BASE}/oauth/token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body,
+  });
 }
 
 export async function exchangeCodeForTokens(code: string, codeVerifier?: string) {
@@ -345,7 +376,7 @@ export async function exchangeCodeForTokens(code: string, codeVerifier?: string)
 }
 
 export async function refreshAccessToken() {
-  await loadPersistedTokens();
+  await loadPersistedTokens(true);
 
   if (tokenRefreshPromise) {
     await tokenRefreshPromise;
@@ -353,7 +384,6 @@ export async function refreshAccessToken() {
   }
 
   tokenRefreshPromise = (async () => {
-    const { clientId, clientSecret } = getAuthEnv();
     if (!hasOAuthClientConfig()) {
       throw new Error("Missing SoundCloud OAuth client configuration");
     }
@@ -362,24 +392,30 @@ export async function refreshAccessToken() {
       throw new Error("Missing SoundCloud refresh token");
     }
 
-    const body = new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      grant_type: "refresh_token",
-      refresh_token: tokenState.refreshToken,
-    });
-
-    const response = await fetch(`${SC_OAUTH_BASE}/oauth/token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body,
-    });
+    const attemptedRefreshToken = tokenState.refreshToken;
+    let response = await requestTokenRefresh(attemptedRefreshToken);
 
     if (!response.ok) {
       const detail = await response.text();
-      throw new Error(`SoundCloud token refresh failed (${response.status}): ${detail}`);
+      const isInvalidGrant = response.status === 400 && detail.includes("invalid_grant");
+
+      if (isInvalidGrant) {
+        await loadPersistedTokens(true);
+
+        if (tokenState.refreshToken && tokenState.refreshToken !== attemptedRefreshToken) {
+          console.info("[soundcloud] reloaded a newer refresh token from the token cache");
+          response = await requestTokenRefresh(tokenState.refreshToken);
+
+          if (!response.ok) {
+            const retryDetail = await response.text();
+            throw new Error(`SoundCloud token refresh failed (${response.status}) after cache reload: ${retryDetail}`);
+          }
+        } else {
+          throw new Error(`SoundCloud token refresh failed (${response.status}): ${detail}`);
+        }
+      } else {
+        throw new Error(`SoundCloud token refresh failed (${response.status}): ${detail}`);
+      }
     }
 
     const json = (await response.json()) as OAuthTokenResponse;
@@ -414,6 +450,15 @@ export async function scRequest(pathname: string, init?: RequestInit) {
   };
 
   let response = await makeRequest();
+  if (response.status === 401) {
+    const currentAccessToken = tokenState.accessToken;
+    await loadPersistedTokens(true);
+
+    if (tokenState.accessToken && tokenState.accessToken !== currentAccessToken) {
+      response = await makeRequest();
+    }
+  }
+
   if (response.status === 401) {
     await refreshAccessToken();
     response = await makeRequest();
