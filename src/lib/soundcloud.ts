@@ -477,17 +477,70 @@ export async function getMe() {
   return sanitizeMe(await response.json());
 }
 
-export async function getMyTracks(limit = 12) {
-  const response = await scRequest(`/me/tracks?limit=${limit}&linked_partitioning=1`);
-  const json = (await response.json()) as { collection?: unknown[] } | unknown[];
-  const collection = Array.isArray(json) ? json : json.collection ?? [];
+type SoundCloudCollectionPage = {
+  collection?: unknown[];
+  next_href?: string | null;
+};
+
+async function scRequestAbsolute(url: string, init?: RequestInit) {
+  await loadPersistedTokens();
+
+  const makeRequest = async () =>
+    fetch(url, {
+      ...init,
+      headers: {
+        ...(init?.headers ?? {}),
+        Authorization: `OAuth ${tokenState.accessToken}`,
+      },
+    });
+
+  let response = await makeRequest();
+  if (response.status === 401) {
+    const currentAccessToken = tokenState.accessToken;
+    await loadPersistedTokens(true);
+
+    if (tokenState.accessToken && tokenState.accessToken !== currentAccessToken) {
+      response = await makeRequest();
+    }
+  }
+
+  if (response.status === 401) {
+    await refreshAccessToken();
+    response = await makeRequest();
+  }
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`SoundCloud request failed (${response.status}) for ${url}: ${detail}`);
+  }
+
+  return response;
+}
+
+async function getPaginatedCollection(pathname: string, limit = 100) {
+  const collection: unknown[] = [];
+  let nextHref: string | null = `${SC_API_BASE}${pathname}${pathname.includes("?") ? "&" : "?"}limit=${limit}&linked_partitioning=1`;
+
+  while (nextHref) {
+    const response = nextHref.startsWith(SC_API_BASE)
+      ? await scRequestAbsolute(nextHref)
+      : await scRequest(nextHref.replace(SC_API_BASE, ""));
+    const json = (await response.json()) as SoundCloudCollectionPage | unknown[];
+    const page = Array.isArray(json) ? { collection: json, next_href: null } : json;
+    collection.push(...(page.collection ?? []));
+    nextHref = page.next_href ?? null;
+  }
+
+  return collection;
+}
+
+export async function getMyTracks(limit = 100) {
+  const collection = await getPaginatedCollection("/me/tracks", limit);
   return collection.map((track) => sanitizeTrack(track)).filter(Boolean);
 }
 
-export async function getMyPlaylists(limit = 12) {
-  const response = await scRequest(`/me/playlists?limit=${limit}&linked_partitioning=1`);
-  const json = (await response.json()) as { collection?: unknown[] } | unknown[];
-  const collection = Array.isArray(json) ? json : json.collection ?? [];
+export async function getMyPlaylists(limit = 100) {
+  const collection = await getPaginatedCollection("/me/playlists", limit);
   return collection.map((playlist) => sanitizePlaylist(playlist)).filter(Boolean);
 }
 
