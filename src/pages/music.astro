@@ -19,7 +19,9 @@ const sortBy = sortParam === "plays" || sortParam === "likes" ? sortParam : "new
 const trackSearch = (Astro.url.searchParams.get("q") ?? "").trim();
 const trackSearchKey = trackSearch.toLowerCase();
 const paginationEnabled = isSoundCloudPaginationEnabled();
+const TRACKS_PAGE_SIZE = 8;
 const TRACKS_BATCH_SIZE = 8;
+const TRACKS_INITIAL_COUNT = 16;
 const rawPage = Number(Astro.url.searchParams.get("page") ?? "1");
 const requestedPage = Number.isFinite(rawPage) ? Math.max(1, Math.floor(rawPage)) : 1;
 
@@ -75,9 +77,9 @@ const searchedTracks = trackSearchKey
   ? sortedTracks.filter((track) => track.title.toLowerCase().includes(trackSearchKey))
   : sortedTracks;
 
-const totalTrackPages = Math.max(1, Math.ceil(searchedTracks.length / TRACKS_BATCH_SIZE));
+const totalTrackPages = Math.max(1, Math.ceil(searchedTracks.length / TRACKS_PAGE_SIZE));
 const currentTrackPage = Math.min(requestedPage, totalTrackPages);
-const trackStartIndex = (currentTrackPage - 1) * TRACKS_BATCH_SIZE;
+const trackStartIndex = (currentTrackPage - 1) * TRACKS_PAGE_SIZE;
 
 const buildMusicUrl = (overrides?: {
   genre?: string | null;
@@ -123,8 +125,8 @@ const toTrackCard = (track: (typeof searchedTracks)[number]) => ({
   href: track.permalink_url,
 });
 const clientTracks = searchedTracks.map((track) => toTrackCard(track));
-const initialTracks = clientTracks.slice(0, TRACKS_BATCH_SIZE);
-const paginatedTracks = searchedTracks.slice(trackStartIndex, trackStartIndex + TRACKS_BATCH_SIZE).map((track) => toTrackCard(track));
+const initialTracks = clientTracks.slice(0, TRACKS_INITIAL_COUNT);
+const paginatedTracks = searchedTracks.slice(trackStartIndex, trackStartIndex + TRACKS_PAGE_SIZE).map((track) => toTrackCard(track));
 const visibleTracks = paginationEnabled ? paginatedTracks : initialTracks;
 const clientTracksJson = JSON.stringify(clientTracks).replaceAll("<", "\\u003c");
 ---
@@ -357,8 +359,9 @@ const clientTracksJson = JSON.stringify(clientTracks).replaceAll("<", "\\u003c")
 
     if (grid instanceof HTMLElement && dataNode instanceof HTMLScriptElement && sentinel instanceof HTMLElement) {
       const allTracks = JSON.parse(dataNode.textContent || "[]");
+      const initialCount = 16;
       const batchSize = 8;
-      let visibleCount = Math.min(batchSize, allTracks.length);
+      let visibleCount = Math.min(initialCount, allTracks.length);
 
       const escapeHtml = (value) =>
         String(value)
@@ -404,7 +407,15 @@ const clientTracksJson = JSON.stringify(clientTracks).replaceAll("<", "\\u003c")
         sentinel.classList.toggle("hidden", visibleCount >= allTracks.length);
       };
 
+      const fillViewport = () => {
+        while (visibleCount < allTracks.length && document.documentElement.scrollHeight <= window.innerHeight + 160) {
+          visibleCount = Math.min(allTracks.length, visibleCount + batchSize);
+          render();
+        }
+      };
+
       render();
+      fillViewport();
 
       if (visibleCount < allTracks.length) {
         const observer = new IntersectionObserver(
@@ -413,6 +424,7 @@ const clientTracksJson = JSON.stringify(clientTracks).replaceAll("<", "\\u003c")
             if (!entry?.isIntersecting) return;
             visibleCount = Math.min(allTracks.length, visibleCount + batchSize);
             render();
+            fillViewport();
             if (visibleCount >= allTracks.length) {
               observer.disconnect();
             }
@@ -421,6 +433,7 @@ const clientTracksJson = JSON.stringify(clientTracks).replaceAll("<", "\\u003c")
         );
 
         observer.observe(sentinel);
+        window.addEventListener("resize", fillViewport);
       }
     }
   })();

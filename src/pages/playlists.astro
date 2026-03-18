@@ -14,7 +14,9 @@ const searchKey = search.toLowerCase();
 const selectedPlaylistIdRaw = Number(Astro.url.searchParams.get("playlist") ?? "");
 const selectedPlaylistId = Number.isFinite(selectedPlaylistIdRaw) ? selectedPlaylistIdRaw : null;
 const paginationEnabled = isSoundCloudPaginationEnabled();
+const PLAYLISTS_PAGE_SIZE = 12;
 const PLAYLISTS_BATCH_SIZE = 12;
+const PLAYLISTS_INITIAL_COUNT = 24;
 const rawPage = Number(Astro.url.searchParams.get("page") ?? "1");
 const requestedPage = Number.isFinite(rawPage) ? Math.max(1, Math.floor(rawPage)) : 1;
 
@@ -49,9 +51,9 @@ const selectedPlaylist = selectedPlaylistId
   ? visiblePlaylists.find((playlist) => playlist.id === selectedPlaylistId) ?? null
   : null;
 
-const totalPages = Math.max(1, Math.ceil(filteredPlaylists.length / PLAYLISTS_BATCH_SIZE));
+const totalPages = Math.max(1, Math.ceil(filteredPlaylists.length / PLAYLISTS_PAGE_SIZE));
 const currentPage = Math.min(requestedPage, totalPages);
-const startIndex = (currentPage - 1) * PLAYLISTS_BATCH_SIZE;
+const startIndex = (currentPage - 1) * PLAYLISTS_PAGE_SIZE;
 
 const buildUrl = (overrides?: { genre?: string | null; q?: string | null; playlist?: number | null; page?: number | null }) => {
   const params = new URLSearchParams();
@@ -71,8 +73,8 @@ const fallbackCoverUrl = "/textures/bg-main.png";
 const getPlayerUrl = (url: string) =>
   `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%235CC8FF&auto_play=true&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=true&visual=false`;
 const clientPlaylistsJson = JSON.stringify(filteredPlaylists).replaceAll("<", "\\u003c");
-const initialPlaylists = filteredPlaylists.slice(0, PLAYLISTS_BATCH_SIZE);
-const paginatedPlaylists = filteredPlaylists.slice(startIndex, startIndex + PLAYLISTS_BATCH_SIZE);
+const initialPlaylists = filteredPlaylists.slice(0, PLAYLISTS_INITIAL_COUNT);
+const paginatedPlaylists = filteredPlaylists.slice(startIndex, startIndex + PLAYLISTS_PAGE_SIZE);
 const visibleLibraryPlaylists = paginationEnabled ? paginatedPlaylists : initialPlaylists;
 const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
   (track) => !isPrivateTrack(track) && !isBlockedByAccess(track),
@@ -339,8 +341,9 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
 
       if (input instanceof HTMLInputElement && grid instanceof HTMLElement && dataNode instanceof HTMLScriptElement && sentinel instanceof HTMLElement) {
         const allPlaylists = JSON.parse(dataNode.textContent || "[]");
+        const initialCount = 24;
         const pageSize = 12;
-        let visibleCount = Math.min(pageSize, allPlaylists.length);
+        let visibleCount = Math.min(initialCount, allPlaylists.length);
         let activeList = allPlaylists;
 
         const escapeHtml = (value) =>
@@ -401,6 +404,13 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
           window.history.replaceState({}, "", `${url.pathname}${url.search}`);
         };
 
+        const fillViewport = () => {
+          while (visibleCount < activeList.length && document.documentElement.scrollHeight <= window.innerHeight + 160) {
+            visibleCount = Math.min(activeList.length, visibleCount + pageSize);
+            render();
+          }
+        };
+
         form?.addEventListener("submit", (event) => {
           event.preventDefault();
           window.clearTimeout(timer);
@@ -422,12 +432,15 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
             if (!entry?.isIntersecting || visibleCount >= activeList.length) return;
             visibleCount = Math.min(activeList.length, visibleCount + pageSize);
             render();
+            fillViewport();
           },
           { rootMargin: "260px 0px" },
         );
 
         observer.observe(sentinel);
         render();
+        fillViewport();
+        window.addEventListener("resize", fillViewport);
       }
     })();
   </script>
