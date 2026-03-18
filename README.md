@@ -31,10 +31,16 @@ Required:
 Optional:
 
 - `SOUNDCLOUD_TOKENS_PATH`
+- `SOUNDCLOUD_PAGINATION`
 
 The app now refreshes SoundCloud tokens automatically and writes the latest access and refresh token pair to `.soundcloud.tokens.json` by default. On restart it will read that cache back in, so you do not need to manually re-authenticate after every token refresh.
 
 If your host clears the application filesystem on restart or deploy, point `SOUNDCLOUD_TOKENS_PATH` at a persistent writable location. If the host does not offer persistent storage, you will still need to reconnect SoundCloud after the token cache is lost.
+
+`SOUNDCLOUD_PAGINATION` controls how the `music` and `playlists` pages load items:
+
+- `off` (default): lazy continuous scroll
+- `on`: numbered previous/next pagination
 
 For staging on `system174.andrewkennedydev.com`, set:
 

@@ -5,6 +5,7 @@ import Card from "../components/Card.astro";
 import SoundCloudTrackCard from "../components/SoundCloudTrackCard.astro";
 import { getSoundCloudDashboardData } from "../lib/soundcloud";
 import { getSoundCloudPlayerUrl } from "../lib/soundcloud-embed";
+import { isSoundCloudPaginationEnabled } from "../lib/site-config";
 
 const soundcloud = await getSoundCloudDashboardData();
 const tracks = soundcloud.tracks;
@@ -17,8 +18,8 @@ const sortParam = (Astro.url.searchParams.get("sort") ?? "newest").trim().toLowe
 const sortBy = sortParam === "plays" || sortParam === "likes" ? sortParam : "newest";
 const trackSearch = (Astro.url.searchParams.get("q") ?? "").trim();
 const trackSearchKey = trackSearch.toLowerCase();
-const TRACKS_PER_PAGE = 8;
-
+const paginationEnabled = isSoundCloudPaginationEnabled();
+const TRACKS_BATCH_SIZE = 8;
 const rawPage = Number(Astro.url.searchParams.get("page") ?? "1");
 const requestedPage = Number.isFinite(rawPage) ? Math.max(1, Math.floor(rawPage)) : 1;
 
@@ -74,24 +75,29 @@ const searchedTracks = trackSearchKey
   ? sortedTracks.filter((track) => track.title.toLowerCase().includes(trackSearchKey))
   : sortedTracks;
 
-const totalTrackPages = Math.max(1, Math.ceil(searchedTracks.length / TRACKS_PER_PAGE));
+const totalTrackPages = Math.max(1, Math.ceil(searchedTracks.length / TRACKS_BATCH_SIZE));
 const currentTrackPage = Math.min(requestedPage, totalTrackPages);
-const trackStartIndex = (currentTrackPage - 1) * TRACKS_PER_PAGE;
-const paginatedTracks = searchedTracks.slice(trackStartIndex, trackStartIndex + TRACKS_PER_PAGE);
+const trackStartIndex = (currentTrackPage - 1) * TRACKS_BATCH_SIZE;
 
-const buildMusicUrl = (overrides?: { genre?: string | null; remix?: boolean; sort?: "newest" | "plays" | "likes"; q?: string | null; page?: number | null }) => {
+const buildMusicUrl = (overrides?: {
+  genre?: string | null;
+  remix?: boolean;
+  sort?: "newest" | "plays" | "likes";
+  q?: string | null;
+  page?: number | null;
+}) => {
   const params = new URLSearchParams();
   const genre = overrides?.genre === undefined ? selectedGenre : overrides.genre ?? "";
   const remix = overrides?.remix === undefined ? showRemix : overrides.remix;
   const sort = overrides?.sort === undefined ? sortBy : overrides.sort;
   const q = overrides?.q === undefined ? trackSearch : overrides.q ?? "";
-  const page = overrides?.page === undefined ? null : overrides.page;
+  const page = overrides?.page === undefined ? (paginationEnabled ? currentTrackPage : null) : overrides.page;
 
   if (genre) params.set("genre", genre);
   if (remix) params.set("remix", "on");
   if (sort && sort !== "newest") params.set("sort", sort);
   if (q) params.set("q", q);
-  if (page && page > 1) params.set("page", String(page));
+  if (paginationEnabled && page && page > 1) params.set("page", String(page));
 
   const query = params.toString();
   return query ? `/music?${query}` : "/music";
@@ -107,6 +113,20 @@ const genreFilters = [
 ];
 
 const fallbackCoverUrl = "/textures/bg-main.png";
+const toTrackCard = (track: (typeof searchedTracks)[number]) => ({
+  title: track.title,
+  genre: track.genre ?? "",
+  artworkUrl: track.artwork_url ?? "",
+  sourceUrl: track.permalink_url,
+  playUrl: getSoundCloudPlayerUrl(track.permalink_url),
+  pauseUrl: getSoundCloudPlayerUrl(track.permalink_url, false),
+  href: track.permalink_url,
+});
+const clientTracks = searchedTracks.map((track) => toTrackCard(track));
+const initialTracks = clientTracks.slice(0, TRACKS_BATCH_SIZE);
+const paginatedTracks = searchedTracks.slice(trackStartIndex, trackStartIndex + TRACKS_BATCH_SIZE).map((track) => toTrackCard(track));
+const visibleTracks = paginationEnabled ? paginatedTracks : initialTracks;
+const clientTracksJson = JSON.stringify(clientTracks).replaceAll("<", "\\u003c");
 ---
 
 <BaseLayout title="System 174 | Music">
@@ -199,6 +219,9 @@ const fallbackCoverUrl = "/textures/bg-main.png";
             placeholder="Search tracks"
             class="w-full rounded-xl bg-[#0A0C10]/40 border border-white/10 px-3 py-2 text-sm text-[#E7EDF6] placeholder:text-[#77849A] focus:outline-none focus:ring-2 focus:ring-[#5CC8FF]/50 focus:border-[#5CC8FF]/50 sm:w-64"
           />
+          {selectedGenre && <input type="hidden" name="genre" value={selectedGenre} />}
+          {showRemix && <input type="hidden" name="remix" value="on" />}
+          {sortBy !== "newest" && <input type="hidden" name="sort" value={sortBy} />}
           <button
             type="submit"
             class="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold bg-[#1A2230] border border-white/10 text-[#E7EDF6] hover:bg-[#1A2230]/80 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-[#5CC8FF]/40 focus:ring-offset-2 focus:ring-offset-[#0A0C10] transition duration-150 ease-out"
@@ -207,7 +230,7 @@ const fallbackCoverUrl = "/textures/bg-main.png";
           </button>
           {trackSearch && (
             <a
-              href="/music"
+              href={buildMusicUrl({ q: null, page: null })}
               class="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold border border-white/10 text-[#AAB6C6] hover:text-[#E7EDF6] hover:border-white/20 transition duration-150 ease-out"
             >
               Clear
@@ -223,48 +246,57 @@ const fallbackCoverUrl = "/textures/bg-main.png";
         </Card>
       ) : (
         <>
-          <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {paginatedTracks.map((track) => (
+          <div id="music-grid" class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {visibleTracks.map((track) => (
               <SoundCloudTrackCard
                 title={track.title}
                 genre={track.genre}
-                artworkUrl={track.artwork_url}
+                artworkUrl={track.artworkUrl}
                 fallbackCoverUrl={fallbackCoverUrl}
-                sourceUrl={track.permalink_url}
-                playUrl={getSoundCloudPlayerUrl(track.permalink_url)}
-                pauseUrl={getSoundCloudPlayerUrl(track.permalink_url, false)}
-                trackHref={track.permalink_url}
+                sourceUrl={track.sourceUrl}
+                playUrl={track.playUrl}
+                pauseUrl={track.pauseUrl}
+                trackHref={track.href}
               />
             ))}
           </div>
-          {totalTrackPages > 1 && (
-            <div class="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#11151C]/70 p-3">
-              <a
-                href={buildMusicUrl({ page: currentTrackPage - 1 })}
-                class:list={[
-                  "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
-                  currentTrackPage <= 1
-                    ? "pointer-events-none border-white/10 text-[#77849A]"
-                    : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
-                ]}
-              >
-                Previous
-              </a>
-              <p class="text-xs uppercase tracking-[0.12em] text-[#AAB6C6]">
-                Page {currentTrackPage} / {totalTrackPages}
-              </p>
-              <a
-                href={buildMusicUrl({ page: currentTrackPage + 1 })}
-                class:list={[
-                  "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
-                  currentTrackPage >= totalTrackPages
-                    ? "pointer-events-none border-white/10 text-[#77849A]"
-                    : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
-                ]}
-              >
-                Next
-              </a>
-            </div>
+          {paginationEnabled ? (
+            totalTrackPages > 1 && (
+              <div class="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#11151C]/70 p-3">
+                <a
+                  href={buildMusicUrl({ page: currentTrackPage - 1 })}
+                  class:list={[
+                    "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
+                    currentTrackPage <= 1
+                      ? "pointer-events-none border-white/10 text-[#77849A]"
+                      : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
+                  ]}
+                >
+                  Previous
+                </a>
+                <p class="text-xs uppercase tracking-[0.12em] text-[#AAB6C6]">
+                  Page {currentTrackPage} / {totalTrackPages}
+                </p>
+                <a
+                  href={buildMusicUrl({ page: currentTrackPage + 1 })}
+                  class:list={[
+                    "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
+                    currentTrackPage >= totalTrackPages
+                      ? "pointer-events-none border-white/10 text-[#77849A]"
+                      : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
+                  ]}
+                >
+                  Next
+                </a>
+              </div>
+            )
+          ) : (
+            <>
+              <script type="application/json" id="music-data">{clientTracksJson}</script>
+              <div id="music-infinite-sentinel" class="mt-6 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-[#77849A]">
+                Loading more tracks
+              </div>
+            </>
           )}
         </>
       )}
@@ -288,11 +320,11 @@ const fallbackCoverUrl = "/textures/bg-main.png";
     const navigateToSearch = () => {
       const q = input.value.trim();
       const url = new URL(window.location.href);
-      url.pathname = "/music";
-      url.search = "";
-      if (q) {
-        url.searchParams.set("q", q);
-      }
+
+      if (q) url.searchParams.set("q", q);
+      else url.searchParams.delete("q");
+      url.searchParams.delete("page");
+
       const target = `${url.pathname}${url.search}`;
       const current = `${window.location.pathname}${window.location.search}`;
       if (target !== current) {
@@ -312,5 +344,84 @@ const fallbackCoverUrl = "/textures/bg-main.png";
         navigateToSearch();
       }
     });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      window.clearTimeout(timer);
+      navigateToSearch();
+    });
+
+    const grid = document.getElementById("music-grid");
+    const dataNode = document.getElementById("music-data");
+    const sentinel = document.getElementById("music-infinite-sentinel");
+
+    if (grid instanceof HTMLElement && dataNode instanceof HTMLScriptElement && sentinel instanceof HTMLElement) {
+      const allTracks = JSON.parse(dataNode.textContent || "[]");
+      const batchSize = 8;
+      let visibleCount = Math.min(batchSize, allTracks.length);
+
+      const escapeHtml = (value) =>
+        String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+
+      const cardHtml = (track) => `
+        <article class="group rounded-2xl border border-white/10 bg-[#11151C]/60 overflow-hidden hover:border-[#5CC8FF]/40 transition duration-150 ease-out">
+          <button
+            type="button"
+            data-sc-source="${escapeHtml(track.sourceUrl || track.href || "")}"
+            data-sc-play="${escapeHtml(track.playUrl || "")}"
+            data-sc-pause="${escapeHtml(track.pauseUrl || "")}"
+            data-sc-title="${escapeHtml(track.title || "")}"
+            data-sc-artwork="${escapeHtml(track.artworkUrl || "")}"
+            data-sc-href="${escapeHtml(track.href || "")}"
+            class="block w-full text-left"
+            aria-label="Play ${escapeHtml(track.title || "track")}"
+          >
+            <div class="relative aspect-square w-full bg-[#1A2230] bg-cover bg-center" style="background-image:url('/textures/bg-main.png')">
+              ${
+                track.artworkUrl
+                  ? `<img src="${escapeHtml(track.artworkUrl)}" alt="${escapeHtml(track.title || "")}" loading="lazy" decoding="async" onerror="this.style.display='none'" class="h-full w-full object-cover opacity-95 group-hover:opacity-100 transition duration-150 ease-out" />`
+                  : ""
+              }
+              <div class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 transition duration-150 ease-out group-hover:opacity-100">
+                <span data-icon-toggle class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[#5CC8FF]/60 bg-[#0A0C10]/70 text-[#E7EDF6]">▶</span>
+              </div>
+            </div>
+          </button>
+          <div class="p-3">
+            <p class="text-sm font-semibold tracking-tight text-[#E7EDF6]">${escapeHtml(track.title || "")}</p>
+            ${track.genre ? `<p class="mt-1 text-[11px] uppercase tracking-[0.18em] text-[#77849A]">${escapeHtml(track.genre)}</p>` : ""}
+          </div>
+        </article>
+      `;
+
+      const render = () => {
+        grid.innerHTML = allTracks.slice(0, visibleCount).map(cardHtml).join("");
+        sentinel.classList.toggle("hidden", visibleCount >= allTracks.length);
+      };
+
+      render();
+
+      if (visibleCount < allTracks.length) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            const entry = entries[0];
+            if (!entry?.isIntersecting) return;
+            visibleCount = Math.min(allTracks.length, visibleCount + batchSize);
+            render();
+            if (visibleCount >= allTracks.length) {
+              observer.disconnect();
+            }
+          },
+          { rootMargin: "260px 0px" },
+        );
+
+        observer.observe(sentinel);
+      }
+    }
   })();
 </script>

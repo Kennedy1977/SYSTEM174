@@ -3,6 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import Section from "../components/Section.astro";
 import Card from "../components/Card.astro";
 import { getSoundCloudDashboardData } from "../lib/soundcloud";
+import { isSoundCloudPaginationEnabled } from "../lib/site-config";
 
 const soundcloud = await getSoundCloudDashboardData();
 const playlists = soundcloud.playlists;
@@ -12,7 +13,10 @@ const search = (Astro.url.searchParams.get("q") ?? "").trim();
 const searchKey = search.toLowerCase();
 const selectedPlaylistIdRaw = Number(Astro.url.searchParams.get("playlist") ?? "");
 const selectedPlaylistId = Number.isFinite(selectedPlaylistIdRaw) ? selectedPlaylistIdRaw : null;
-const ITEMS_PER_PAGE = 12;
+const paginationEnabled = isSoundCloudPaginationEnabled();
+const PLAYLISTS_BATCH_SIZE = 12;
+const rawPage = Number(Astro.url.searchParams.get("page") ?? "1");
+const requestedPage = Number.isFinite(rawPage) ? Math.max(1, Math.floor(rawPage)) : 1;
 
 const isCoverOrBootleg = (item: { title: string }) => {
   const title = item.title.toLowerCase();
@@ -28,9 +32,6 @@ const isBlockedByAccess = (item: { access?: string | null }) =>
     .includes("blocked");
 
 const visiblePlaylists = playlists.filter((playlist) => !isCoverOrBootleg(playlist));
-
-const rawPage = Number(Astro.url.searchParams.get("page") ?? "1");
-const requestedPage = Number.isFinite(rawPage) ? Math.max(1, Math.floor(rawPage)) : 1;
 
 const allGenres = Array.from(new Set(visiblePlaylists.map((item) => (item.genre ?? "").trim()).filter(Boolean))).sort((a, b) =>
   a.localeCompare(b),
@@ -48,20 +49,19 @@ const selectedPlaylist = selectedPlaylistId
   ? visiblePlaylists.find((playlist) => playlist.id === selectedPlaylistId) ?? null
   : null;
 
-const totalPages = Math.max(1, Math.ceil(filteredPlaylists.length / ITEMS_PER_PAGE));
+const totalPages = Math.max(1, Math.ceil(filteredPlaylists.length / PLAYLISTS_BATCH_SIZE));
 const currentPage = Math.min(requestedPage, totalPages);
-const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-const paginatedPlaylists = filteredPlaylists.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+const startIndex = (currentPage - 1) * PLAYLISTS_BATCH_SIZE;
 
-const buildUrl = (overrides?: { genre?: string | null; q?: string | null; page?: number | null; playlist?: number | null }) => {
+const buildUrl = (overrides?: { genre?: string | null; q?: string | null; playlist?: number | null; page?: number | null }) => {
   const params = new URLSearchParams();
   const genre = overrides?.genre === undefined ? selectedGenre : overrides.genre ?? "";
   const q = overrides?.q === undefined ? search : overrides.q ?? "";
-  const page = overrides?.page === undefined ? null : overrides.page;
   const playlistId = overrides?.playlist === undefined ? selectedPlaylist?.id ?? null : overrides.playlist;
+  const page = overrides?.page === undefined ? (paginationEnabled ? currentPage : null) : overrides.page;
   if (genre) params.set("genre", genre);
   if (q) params.set("q", q);
-  if (page && page > 1) params.set("page", String(page));
+  if (paginationEnabled && page && page > 1) params.set("page", String(page));
   if (playlistId) params.set("playlist", String(playlistId));
   const query = params.toString();
   return query ? `/playlists?${query}` : "/playlists";
@@ -71,6 +71,9 @@ const fallbackCoverUrl = "/textures/bg-main.png";
 const getPlayerUrl = (url: string) =>
   `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%235CC8FF&auto_play=true&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=true&visual=false`;
 const clientPlaylistsJson = JSON.stringify(filteredPlaylists).replaceAll("<", "\\u003c");
+const initialPlaylists = filteredPlaylists.slice(0, PLAYLISTS_BATCH_SIZE);
+const paginatedPlaylists = filteredPlaylists.slice(startIndex, startIndex + PLAYLISTS_BATCH_SIZE);
+const visibleLibraryPlaylists = paginationEnabled ? paginatedPlaylists : initialPlaylists;
 const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
   (track) => !isPrivateTrack(track) && !isBlockedByAccess(track),
 );
@@ -122,7 +125,7 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
           </h3>
           {selectedPlaylist && (
             <div class="mt-2 flex items-center gap-2 text-xs uppercase tracking-[0.12em] text-[#AAB6C6]">
-              <a href={buildUrl({ playlist: null, page: null })} class="hover:text-[#E7EDF6] transition duration-150 ease-out">
+              <a href={buildUrl({ playlist: null })} class="hover:text-[#E7EDF6] transition duration-150 ease-out">
                 Playlist Library
               </a>
               <span>/</span>
@@ -140,6 +143,7 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
               placeholder="Search playlists"
               class="w-full rounded-xl bg-[#0A0C10]/40 border border-white/10 px-3 py-2 text-sm text-[#E7EDF6] placeholder:text-[#77849A] focus:outline-none focus:ring-2 focus:ring-[#5CC8FF]/50 focus:border-[#5CC8FF]/50 sm:w-64"
             />
+            {selectedGenre && <input type="hidden" name="genre" value={selectedGenre} />}
             <button
               type="submit"
               class="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold bg-[#1A2230] border border-white/10 text-[#E7EDF6] hover:bg-[#1A2230]/80 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-[#5CC8FF]/40 focus:ring-offset-2 focus:ring-offset-[#0A0C10] transition duration-150 ease-out"
@@ -148,7 +152,7 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
             </button>
             {search && (
               <a
-                href="/playlists"
+                href={buildUrl({ q: null, page: null })}
                 class="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold border border-white/10 text-[#AAB6C6] hover:text-[#E7EDF6] hover:border-white/20 transition duration-150 ease-out"
               >
                 Clear
@@ -160,7 +164,7 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
       {selectedPlaylist ? (
         <div class="mt-4 space-y-3">
           <a
-            href={buildUrl({ playlist: null, page: null })}
+            href={buildUrl({ playlist: null })}
             class="inline-flex items-center justify-center rounded-xl border border-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[#AAB6C6] hover:text-[#E7EDF6] hover:border-[#5CC8FF]/40 transition duration-150 ease-out"
           >
             Back to Playlist Library
@@ -203,9 +207,9 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
       ) : (
         <>
           <div id="playlists-grid" class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {paginatedPlaylists.map((playlist) => (
+            {visibleLibraryPlaylists.map((playlist) => (
               <article class="group rounded-2xl border border-white/10 bg-[#11151C]/60 overflow-hidden hover:border-[#5CC8FF]/40 transition duration-150 ease-out">
-                <a href={buildUrl({ playlist: playlist.id, page: null })} class="block" aria-label={`Open ${playlist.title}`}>
+                <a href={buildUrl({ playlist: playlist.id })} class="block" aria-label={`Open ${playlist.title}`}>
                   <div class="relative aspect-square w-full bg-[#1A2230] bg-cover bg-center" style={`background-image:url('${fallbackCoverUrl}')`}>
                     {playlist.artwork_url ? (
                       <img
@@ -231,35 +235,43 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
               </article>
             ))}
           </div>
-          <script type="application/json" id="playlists-data">{clientPlaylistsJson}</script>
-          {totalPages > 1 && (
-            <div id="playlists-pagination" class="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#11151C]/70 p-3">
-              <a
-                href={buildUrl({ page: currentPage - 1 })}
-                class:list={[
-                  "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
-                  currentPage <= 1
-                    ? "pointer-events-none border-white/10 text-[#77849A]"
-                    : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
-                ]}
-              >
-                Previous
-              </a>
-              <p class="text-xs uppercase tracking-[0.12em] text-[#AAB6C6]">
-                Page {currentPage} / {totalPages}
-              </p>
-              <a
-                href={buildUrl({ page: currentPage + 1 })}
-                class:list={[
-                  "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
-                  currentPage >= totalPages
-                    ? "pointer-events-none border-white/10 text-[#77849A]"
-                    : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
-                ]}
-              >
-                Next
-              </a>
-            </div>
+          {paginationEnabled ? (
+            totalPages > 1 && (
+              <div class="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#11151C]/70 p-3">
+                <a
+                  href={buildUrl({ page: currentPage - 1 })}
+                  class:list={[
+                    "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
+                    currentPage <= 1
+                      ? "pointer-events-none border-white/10 text-[#77849A]"
+                      : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
+                  ]}
+                >
+                  Previous
+                </a>
+                <p class="text-xs uppercase tracking-[0.12em] text-[#AAB6C6]">
+                  Page {currentPage} / {totalPages}
+                </p>
+                <a
+                  href={buildUrl({ page: currentPage + 1 })}
+                  class:list={[
+                    "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
+                    currentPage >= totalPages
+                      ? "pointer-events-none border-white/10 text-[#77849A]"
+                      : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]",
+                  ]}
+                >
+                  Next
+                </a>
+              </div>
+            )
+          ) : (
+            <>
+              <script type="application/json" id="playlists-data">{clientPlaylistsJson}</script>
+              <div id="playlists-infinite-sentinel" class="mt-6 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-[#77849A]">
+                Loading more playlists
+              </div>
+            </>
           )}
         </>
       )}
@@ -267,109 +279,156 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
   </Section>
 </BaseLayout>
 
-<script is:inline>
-  (() => {
-    const form = document.querySelector("[data-live-search-form]");
-    const input = form?.querySelector("#playlist-search");
-    let timer;
+{paginationEnabled ? (
+  <script type="module" is:inline>
+    import { navigate } from "astro:transitions/client";
 
-    const grid = document.getElementById("playlists-grid");
-    const pagination = document.getElementById("playlists-pagination");
-    const dataNode = document.getElementById("playlists-data");
+    (() => {
+      const form = document.querySelector("[data-live-search-form]");
+      const input = form?.querySelector("#playlist-search");
+      if (!(input instanceof HTMLInputElement)) return;
 
-    if (input instanceof HTMLInputElement && grid instanceof HTMLElement && dataNode instanceof HTMLScriptElement) {
-      const allPlaylists = JSON.parse(dataNode.textContent || "[]");
-      const pageSize = 12;
-      let page = 1;
+      let timer;
 
-      const escapeHtml = (value) =>
-        String(value)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
-
-      const cardHtml = (playlist) => `
-        <article class="group rounded-2xl border border-white/10 bg-[#11151C]/60 overflow-hidden hover:border-[#5CC8FF]/40 transition duration-150 ease-out">
-          <a href="/playlists?playlist=${playlist.id}" class="block" aria-label="Open ${escapeHtml(playlist.title)}">
-            <div class="relative aspect-square w-full bg-[#1A2230] bg-cover bg-center" style="background-image:url('/textures/bg-main.png')">
-              ${
-                playlist.artwork_url
-                  ? `<img src="${escapeHtml(playlist.artwork_url)}" alt="${escapeHtml(playlist.title)}" loading="lazy" decoding="async" onerror="this.style.display='none'" class="h-full w-full object-cover opacity-95 group-hover:opacity-100 transition duration-150 ease-out" />`
-                  : ""
-              }
-              <div class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 transition duration-150 ease-out group-hover:opacity-100">
-                <span class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[#5CC8FF]/60 bg-[#0A0C10]/70 text-[#E7EDF6]">→</span>
-              </div>
-            </div>
-          </a>
-          <div class="p-3">
-            <p class="text-sm font-semibold tracking-tight text-[#E7EDF6]">${escapeHtml(playlist.title)}</p>
-            ${playlist.genre ? `<p class="mt-1 text-[11px] uppercase tracking-[0.18em] text-[#77849A]">${escapeHtml(playlist.genre)}</p>` : ""}
-          </div>
-        </article>
-      `;
-
-      const render = () => {
-        const q = input.value.trim().toLowerCase();
-        const filtered = q ? allPlaylists.filter((p) => String(p.title || "").toLowerCase().includes(q)) : allPlaylists;
-        const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-        if (page > totalPages) page = totalPages;
-        const start = (page - 1) * pageSize;
-        const items = filtered.slice(start, start + pageSize);
-
-        if (items.length === 0) {
-          grid.innerHTML = `<div class="col-span-full rounded-2xl border border-white/10 bg-[#11151C]/70 p-5 sm:p-6"><p class="font-body text-[15px] leading-relaxed text-[#AAB6C6]">No playlists match the current filters.</p></div>`;
-        } else {
-          grid.innerHTML = items.map(cardHtml).join("");
-        }
-
-        if (pagination instanceof HTMLElement) {
-          if (totalPages <= 1) {
-            pagination.style.display = "none";
-          } else {
-            pagination.style.display = "flex";
-            pagination.innerHTML = `
-              <button type="button" data-page="prev" class="inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out ${page <= 1 ? "pointer-events-none border-white/10 text-[#77849A]" : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]"}">Previous</button>
-              <p class="text-xs uppercase tracking-[0.12em] text-[#AAB6C6]">Page ${page} / ${totalPages}</p>
-              <button type="button" data-page="next" class="inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out ${page >= totalPages ? "pointer-events-none border-white/10 text-[#77849A]" : "border-white/10 bg-[#1A2230] text-[#AAB6C6] hover:border-[#5CC8FF]/40 hover:text-[#E7EDF6]"}">Next</button>
-            `;
-          }
-        }
-
+      const navigateToSearch = () => {
+        const q = input.value.trim();
         const url = new URL(window.location.href);
-        if (q) url.searchParams.set("q", input.value.trim());
+
+        if (q) url.searchParams.set("q", q);
         else url.searchParams.delete("q");
         url.searchParams.delete("page");
-        window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+        url.searchParams.delete("playlist");
+
+        const target = `${url.pathname}${url.search}`;
+        const current = `${window.location.pathname}${window.location.search}`;
+        if (target !== current) {
+          navigate(target);
+        }
       };
 
-      form?.addEventListener("submit", (event) => {
+      form.addEventListener("submit", (event) => {
         event.preventDefault();
         window.clearTimeout(timer);
-        page = 1;
-        render();
+        navigateToSearch();
       });
 
       input.addEventListener("input", () => {
         window.clearTimeout(timer);
-        timer = window.setTimeout(() => {
-          page = 1;
+        timer = window.setTimeout(navigateToSearch, 220);
+      });
+
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          window.clearTimeout(timer);
+          navigateToSearch();
+        }
+      });
+    })();
+  </script>
+) : (
+  <script is:inline>
+    (() => {
+      const form = document.querySelector("[data-live-search-form]");
+      const input = form?.querySelector("#playlist-search");
+      let timer;
+
+      const grid = document.getElementById("playlists-grid");
+      const dataNode = document.getElementById("playlists-data");
+      const sentinel = document.getElementById("playlists-infinite-sentinel");
+
+      if (input instanceof HTMLInputElement && grid instanceof HTMLElement && dataNode instanceof HTMLScriptElement && sentinel instanceof HTMLElement) {
+        const allPlaylists = JSON.parse(dataNode.textContent || "[]");
+        const pageSize = 12;
+        let visibleCount = Math.min(pageSize, allPlaylists.length);
+        let activeList = allPlaylists;
+
+        const escapeHtml = (value) =>
+          String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+
+        const cardHtml = (playlist) => `
+          <article class="group rounded-2xl border border-white/10 bg-[#11151C]/60 overflow-hidden hover:border-[#5CC8FF]/40 transition duration-150 ease-out">
+            <a href="${escapeHtml(buildPlaylistHref(playlist.id))}" class="block" aria-label="Open ${escapeHtml(playlist.title)}">
+              <div class="relative aspect-square w-full bg-[#1A2230] bg-cover bg-center" style="background-image:url('/textures/bg-main.png')">
+                ${
+                  playlist.artwork_url
+                    ? `<img src="${escapeHtml(playlist.artwork_url)}" alt="${escapeHtml(playlist.title)}" loading="lazy" decoding="async" onerror="this.style.display='none'" class="h-full w-full object-cover opacity-95 group-hover:opacity-100 transition duration-150 ease-out" />`
+                    : ""
+                }
+                <div class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 transition duration-150 ease-out group-hover:opacity-100">
+                  <span class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[#5CC8FF]/60 bg-[#0A0C10]/70 text-[#E7EDF6]">→</span>
+                </div>
+              </div>
+            </a>
+            <div class="p-3">
+              <p class="text-sm font-semibold tracking-tight text-[#E7EDF6]">${escapeHtml(playlist.title)}</p>
+              ${playlist.genre ? `<p class="mt-1 text-[11px] uppercase tracking-[0.18em] text-[#77849A]">${escapeHtml(playlist.genre)}</p>` : ""}
+            </div>
+          </article>
+        `;
+
+        const toggleSentinel = () => {
+          sentinel.classList.toggle("hidden", visibleCount >= activeList.length || activeList.length === 0);
+        };
+
+        const buildPlaylistHref = (playlistId) => {
+          const url = new URL(window.location.href);
+          url.searchParams.set("playlist", String(playlistId));
+          return `${url.pathname}${url.search}`;
+        };
+
+        const render = () => {
+          const q = input.value.trim().toLowerCase();
+          activeList = q ? allPlaylists.filter((playlist) => String(playlist.title || "").toLowerCase().includes(q)) : allPlaylists;
+          visibleCount = Math.min(Math.max(pageSize, visibleCount), activeList.length);
+          const items = activeList.slice(0, visibleCount);
+
+          if (items.length === 0) {
+            grid.innerHTML = `<div class="col-span-full rounded-2xl border border-white/10 bg-[#11151C]/70 p-5 sm:p-6"><p class="font-body text-[15px] leading-relaxed text-[#AAB6C6]">No playlists match the current filters.</p></div>`;
+          } else {
+            grid.innerHTML = items.map(cardHtml).join("");
+          }
+          toggleSentinel();
+
+          const url = new URL(window.location.href);
+          if (q) url.searchParams.set("q", input.value.trim());
+          else url.searchParams.delete("q");
+          window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+        };
+
+        form?.addEventListener("submit", (event) => {
+          event.preventDefault();
+          window.clearTimeout(timer);
+          visibleCount = Math.min(pageSize, activeList.length || allPlaylists.length);
           render();
-        }, 160);
-      });
+        });
 
-      pagination?.addEventListener("click", (event) => {
-        const target = event.target;
-        if (!(target instanceof Element)) return;
-        const button = target.closest("[data-page]");
-        if (!(button instanceof HTMLButtonElement)) return;
-        if (button.dataset.page === "prev") page = Math.max(1, page - 1);
-        if (button.dataset.page === "next") page += 1;
+        input.addEventListener("input", () => {
+          window.clearTimeout(timer);
+          timer = window.setTimeout(() => {
+            visibleCount = Math.min(pageSize, allPlaylists.length);
+            render();
+          }, 160);
+        });
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            const entry = entries[0];
+            if (!entry?.isIntersecting || visibleCount >= activeList.length) return;
+            visibleCount = Math.min(activeList.length, visibleCount + pageSize);
+            render();
+          },
+          { rootMargin: "260px 0px" },
+        );
+
+        observer.observe(sentinel);
         render();
-      });
-    }
-
-  })();
-</script>
+      }
+    })();
+  </script>
+)}
