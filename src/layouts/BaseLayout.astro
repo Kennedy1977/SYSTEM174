@@ -3,9 +3,13 @@ import "../styles/global.css";
 import { ClientRouter } from "astro:transitions";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
+import CookieConsentBanner from "../components/CookieConsentBanner.astro";
 import PersistentSoundCloudPlayer from "../components/PersistentSoundCloudPlayer.astro";
 import {
   siteAppleTouchIconPath,
+  siteAnalyticsMeasurementId,
+  siteConsentCookieDurationDays,
+  siteConsentCookieName,
   siteDefaultDescription,
   siteFaviconIcoPath,
   siteFaviconPngPath,
@@ -20,6 +24,9 @@ import {
 } from "../lib/site-meta";
 
 const { title = siteTitle, description = siteDefaultDescription, robots = siteRobots } = Astro.props;
+const analyticsMeasurementId = siteAnalyticsMeasurementId;
+const consentCookieName = siteConsentCookieName;
+const consentCookieMaxAge = siteConsentCookieDurationDays * 24 * 60 * 60;
 const canonicalUrl = Astro.site
   ? new URL(Astro.url.pathname, Astro.site).toString()
   : Astro.url.toString();
@@ -45,16 +52,201 @@ const isHomePage = Astro.url.pathname === "/";
     <meta name="generator" content={Astro.generator} />
     <script
       is:inline
+      define:vars={{ analyticsMeasurementId, consentCookieName, consentCookieMaxAge }}
+    >
+      window.dataLayer = window.dataLayer || [];
+      window.gtag =
+        window.gtag ||
+        function gtag() {
+          window.dataLayer.push(arguments);
+        };
+
+      const deniedConsentState = {
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        ad_personalization: "denied",
+        analytics_storage: "denied",
+      };
+
+      const readCookie = (name) => {
+        const match = document.cookie.match(
+          new RegExp(`(?:^|; )${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}=([^;]*)`),
+        );
+        return match ? decodeURIComponent(match[1]) : null;
+      };
+
+      const writeCookie = (name, value, maxAge) => {
+        const parts = [`${name}=${encodeURIComponent(value)}`, `Max-Age=${maxAge}`, "Path=/", "SameSite=Lax"];
+        if (window.location.protocol === "https:") {
+          parts.push("Secure");
+        }
+        document.cookie = parts.join("; ");
+      };
+
+      const expireCookie = (name, domain) => {
+        const parts = [
+          `${name}=`,
+          "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+          "Max-Age=0",
+          "Path=/",
+          "SameSite=Lax",
+        ];
+        if (domain) {
+          parts.push(`Domain=${domain}`);
+        }
+        if (window.location.protocol === "https:") {
+          parts.push("Secure");
+        }
+        document.cookie = parts.join("; ");
+      };
+
+      const getCookieDomainCandidates = () => {
+        const hostname = window.location.hostname;
+        const hostParts = hostname.split(".");
+        if (hostParts.length < 2) {
+          return [hostname];
+        }
+
+        const baseDomain = hostParts.slice(-2).join(".");
+        return Array.from(new Set([hostname, `.${hostname}`, baseDomain, `.${baseDomain}`]));
+      };
+
+      const clearAnalyticsCookies = () => {
+        const measurementSuffix = analyticsMeasurementId.replace(/^G-/, "");
+        const cookieNames = ["_ga", `_ga_${measurementSuffix}`];
+        const domains = [undefined, ...getCookieDomainCandidates()];
+
+        cookieNames.forEach((cookieName) => {
+          domains.forEach((domain) => {
+            expireCookie(cookieName, domain);
+          });
+        });
+      };
+
+      const parseStoredConsent = () => {
+        const rawValue = readCookie(consentCookieName);
+        if (!rawValue) return null;
+
+        try {
+          const parsed = JSON.parse(rawValue);
+          if (typeof parsed?.analytics !== "boolean") {
+            return null;
+          }
+
+          return {
+            analytics: parsed.analytics,
+            updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : null,
+          };
+        } catch {
+          return null;
+        }
+      };
+
+      const getStoredConsentState = () => {
+        const parsed = parseStoredConsent();
+        return {
+          hasDecision: Boolean(parsed),
+          analytics: parsed?.analytics === true,
+          updatedAt: parsed?.updatedAt ?? null,
+        };
+      };
+
+      const applyGoogleConsent = (analyticsGranted) => {
+        if (!analyticsGranted) {
+          clearAnalyticsCookies();
+        }
+
+        window.gtag("consent", "update", {
+          ...deniedConsentState,
+          analytics_storage: analyticsGranted ? "granted" : "denied",
+        });
+      };
+
+      const trackPageView = () => {
+        const consentState = getStoredConsentState();
+        if (!consentState.analytics) return;
+
+        const pageKey = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        if (window.__system174LastTrackedPage === pageKey) {
+          return;
+        }
+
+        window.__system174LastTrackedPage = pageKey;
+        window.gtag("event", "page_view", {
+          page_title: document.title,
+          page_location: window.location.href,
+          page_path: `${window.location.pathname}${window.location.search}`,
+        });
+      };
+
+      window.system174ConsentManager = {
+        cookieName: consentCookieName,
+        cookieMaxAge: consentCookieMaxAge,
+        getState: getStoredConsentState,
+        setAnalyticsConsent: (analyticsGranted) => {
+          writeCookie(
+            consentCookieName,
+            JSON.stringify({
+              analytics: Boolean(analyticsGranted),
+              updatedAt: new Date().toISOString(),
+              version: 1,
+            }),
+            consentCookieMaxAge,
+          );
+
+          applyGoogleConsent(Boolean(analyticsGranted));
+
+          const state = getStoredConsentState();
+          window.dispatchEvent(new CustomEvent("system174:consent-updated", { detail: state }));
+
+          if (state.analytics) {
+            trackPageView();
+          }
+        },
+        openSettings: () => {
+          window.dispatchEvent(new Event("system174:open-cookie-settings"));
+        },
+        trackPageView,
+      };
+
+      if (!window.__system174AnalyticsInitialized) {
+        window.gtag("consent", "default", {
+          ...deniedConsentState,
+          wait_for_update: 500,
+        });
+
+        const storedConsentState = getStoredConsentState();
+        if (storedConsentState.hasDecision) {
+          applyGoogleConsent(storedConsentState.analytics);
+        }
+      }
+
+      if (!window.__system174AnalyticsPageLoadBound) {
+        const handlePageLoad = () => {
+          window.system174ConsentManager?.trackPageView?.();
+        };
+
+        window.addEventListener("load", handlePageLoad, { once: true });
+        document.addEventListener("astro:page-load", handlePageLoad);
+        window.__system174AnalyticsPageLoadBound = true;
+      }
+    </script>
+    <script
+      is:inline
       async
       src="https://www.googletagmanager.com/gtag/js?id=G-0EDDDZ0WGG"
     ></script>
-    <script is:inline>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
+    <script is:inline define:vars={{ analyticsMeasurementId }}>
+      if (!window.__system174AnalyticsInitialized) {
+        window.gtag("set", "ads_data_redaction", true);
+        window.gtag("js", new Date());
+        window.gtag("config", analyticsMeasurementId, {
+          anonymize_ip: true,
+          send_page_view: false,
+        });
+
+        window.__system174AnalyticsInitialized = true;
       }
-      gtag("js", new Date());
-      gtag("config", "G-0EDDDZ0WGG");
     </script>
     <meta name="description" content={description} />
     <meta name="robots" content={robots} />
@@ -73,12 +265,6 @@ const isHomePage = Astro.url.pathname === "/";
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={socialImageUrl} />
     <ClientRouter />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Sora:wght@500;600;700&display=swap"
-      rel="stylesheet"
-    />
     <link rel="icon" href={faviconIcoUrl} sizes="any" />
     <link rel="icon" type="image/png" href={faviconPngUrl} />
     <link rel="apple-touch-icon" href={appleTouchIconUrl} />
@@ -88,6 +274,7 @@ const isHomePage = Astro.url.pathname === "/";
   </head>
   <body class="site-bg">
     <div class="site-bg-main"></div>
+    <CookieConsentBanner />
     <div class="site-content">
       <Nav currentPath={Astro.url.pathname} />
       <main class="flex-1">

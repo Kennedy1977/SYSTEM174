@@ -11,6 +11,12 @@ export const siteSocialImageAlt = "SYSTEM 174 official artist artwork";
 export const siteFaviconIcoPath = "/favicon.ico";
 export const siteFaviconPngPath = "/assets/img/favicon-512.png";
 export const siteAppleTouchIconPath = "/assets/img/apple-touch-icon.png";
+export const siteAnalyticsMeasurementId = "G-0EDDDZ0WGG";
+export const siteConsentCookieName = "system174_cookie_consent";
+export const siteConsentCookieDurationDays = 180;
+export const siteControllerName = "Andrew Kennedy trading as SYSTEM 174";
+export const sitePrivacyContactEmail = "mgmt@umsl.co.uk";
+export const sitePrivacyLastUpdated = "31 March 2026";
 
 export const siteStructuredData = {
   "@context": "https://schema.org",
