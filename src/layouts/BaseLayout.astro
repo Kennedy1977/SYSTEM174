@@ -273,11 +273,12 @@ const isHomePage = Astro.url.pathname === "/";
     <title>{title}</title>
   </head>
   <body class="site-bg">
+    <a href="#main-content" class="skip-link">Skip to content</a>
     <div class="site-bg-main"></div>
     <CookieConsentBanner />
     <div class="site-content">
       <Nav currentPath={Astro.url.pathname} />
-      <main class="flex-1">
+      <main id="main-content" tabindex="-1" class="flex-1">
         <slot />
       </main>
       <Footer />

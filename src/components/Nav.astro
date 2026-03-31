@@ -3,7 +3,7 @@ import { navLinks } from "../data/site";
 const { currentPath } = Astro.props;
 ---
 
-<nav class="sticky top-0 z-50 backdrop-blur bg-[#0A0C10]/70 border-b border-white/10">
+<nav aria-label="Primary" class="sticky top-0 z-50 backdrop-blur bg-[#0A0C10]/70 border-b border-white/10">
   <div class="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
     <a href="/" class="text-xs uppercase tracking-[0.2em] text-[#AAB6C6] font-mono">SYSTEM 174</a>
     <div class="hidden lg:flex items-center gap-6">
@@ -12,6 +12,7 @@ const { currentPath } = Astro.props;
         return (
           <a
             href={link.href}
+            aria-current={isActive ? "page" : undefined}
             class:list={[
               "text-sm text-[#AAB6C6] hover:text-[#E7EDF6] transition duration-150 ease-out",
               isActive && "text-[#E7EDF6] relative after:absolute after:-bottom-2 after:left-0 after:h-[2px] after:w-full after:bg-[#5CC8FF]",
@@ -24,7 +25,10 @@ const { currentPath } = Astro.props;
     </div>
 
     <details class="relative lg:hidden group">
-      <summary class="list-none flex h-9 w-9 cursor-pointer items-center justify-center rounded border border-white/15 text-[#AAB6C6] hover:text-[#E7EDF6] hover:border-white/30 transition">
+      <summary
+        aria-label="Toggle navigation menu"
+        class="list-none flex h-9 w-9 cursor-pointer items-center justify-center rounded border border-white/15 text-[#AAB6C6] hover:text-[#E7EDF6] hover:border-white/30 transition"
+      >
         <span class="sr-only">Toggle navigation menu</span>
         <svg class="h-5 w-5 group-open:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
           <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
@@ -39,6 +43,7 @@ const { currentPath } = Astro.props;
           return (
             <a
               href={link.href}
+              aria-current={isActive ? "page" : undefined}
               class:list={[
                 "block rounded-lg px-3 py-2 text-sm text-[#AAB6C6] hover:text-[#E7EDF6] hover:bg-white/5 transition",
                 isActive && "text-[#E7EDF6] bg-white/5",

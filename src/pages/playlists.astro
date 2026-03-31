@@ -82,7 +82,7 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
 ---
 
 <BaseLayout title="System 174 | Playlists">
-  <Section title="PLAYLISTS" description="All SoundCloud playlists, synced automatically.">
+  <Section title="PLAYLISTS" description="All SoundCloud playlists, synced automatically." headingLevel={1}>
     {!selectedPlaylist && (
       <div class="mb-10 rounded-2xl border border-white/10 bg-[#11151C]/70 p-5 sm:p-6">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -91,6 +91,7 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
             <div class="mt-4 flex flex-wrap gap-2">
               <a
                 href={buildUrl({ genre: null, page: null })}
+                aria-current={!selectedGenre ? "page" : undefined}
                 class:list={[
                   "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
                   !selectedGenre
@@ -103,6 +104,7 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
               {allGenres.map((genre) => (
                 <a
                   href={buildUrl({ genre, page: null })}
+                  aria-current={genre.toLowerCase() === selectedGenreKey ? "page" : undefined}
                   class:list={[
                     "inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-150 ease-out",
                     genre.toLowerCase() === selectedGenreKey
@@ -137,6 +139,7 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
         </div>
         {!selectedPlaylist && (
           <form method="get" action="/playlists" class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row" data-live-search-form>
+            <label for="playlist-search" class="sr-only">Search playlists</label>
             <input
               type="search"
               name="q"
