@@ -32,6 +32,7 @@ Optional:
 
 - `SOUNDCLOUD_TOKENS_PATH`
 - `SOUNDCLOUD_PAGINATION`
+- `SOUNDCLOUD_TOKEN_EXPORT_KEY`
 
 The app now refreshes SoundCloud tokens automatically and writes the latest access and refresh token pair to `.soundcloud.tokens.json` by default. On restart it will read that cache back in, so you do not need to manually re-authenticate after every token refresh.
 
@@ -47,6 +48,8 @@ For `system174.co.uk`, set:
 - `SOUNDCLOUD_REDIRECT_URI=https://system174.co.uk/soundcloud/callback`
 
 Also add the same callback URL in your SoundCloud app settings.
+
+If you cannot read `.soundcloud.tokens.json` on the deployed host, you can temporarily set `SOUNDCLOUD_TOKEN_EXPORT_KEY` on the server, visit `/soundcloud/token-export`, enter that key, copy the current tokens into your persistent env, then remove `SOUNDCLOUD_TOKEN_EXPORT_KEY` again.
 
 ## Hostinger deploy settings
 

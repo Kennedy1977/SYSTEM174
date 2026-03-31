@@ -26,6 +26,13 @@ type TokenState = {
   refreshToken: string;
 };
 
+export type SoundCloudTokenSnapshot = {
+  accessToken: string;
+  refreshToken: string;
+  hasAccessToken: boolean;
+  hasRefreshToken: boolean;
+};
+
 const tokenState: TokenState = {
   accessToken: getEnvValue("SOUNDCLOUD_ACCESS_TOKEN"),
   refreshToken: getEnvValue("SOUNDCLOUD_REFRESH_TOKEN"),
@@ -430,6 +437,17 @@ export async function refreshAccessToken() {
   } finally {
     tokenRefreshPromise = null;
   }
+}
+
+export async function getSoundCloudTokenSnapshot(): Promise<SoundCloudTokenSnapshot> {
+  await loadPersistedTokens(true);
+
+  return {
+    accessToken: tokenState.accessToken,
+    refreshToken: tokenState.refreshToken,
+    hasAccessToken: Boolean(tokenState.accessToken),
+    hasRefreshToken: Boolean(tokenState.refreshToken),
+  };
 }
 
 export async function scRequest(pathname: string, init?: RequestInit) {
