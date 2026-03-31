@@ -3,9 +3,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import Section from "../components/Section.astro";
 import Card from "../components/Card.astro";
 import { getSoundCloudDashboardData } from "../lib/soundcloud";
+import { buildSystem174Catalog } from "../lib/soundcloud-catalog";
 import { isSoundCloudPaginationEnabled } from "../lib/site-config";
 
-const soundcloud = await getSoundCloudDashboardData();
+const soundcloud = buildSystem174Catalog(await getSoundCloudDashboardData());
 const playlists = soundcloud.playlists;
 const selectedGenre = (Astro.url.searchParams.get("genre") ?? "").trim();
 const selectedGenreKey = selectedGenre.toLowerCase();

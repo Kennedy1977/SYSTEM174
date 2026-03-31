@@ -6,6 +6,7 @@ import ButtonPrimary from "../components/ButtonPrimary.astro";
 import BadgeStatus from "../components/BadgeStatus.astro";
 import SoundCloudTrackCard from "../components/SoundCloudTrackCard.astro";
 import { getSoundCloudDashboardData } from "../lib/soundcloud";
+import { buildSystem174Catalog } from "../lib/soundcloud-catalog";
 import { getSoundCloudPlayerUrl } from "../lib/soundcloud-embed";
 import { siteTitle } from "../lib/site-meta";
 
@@ -36,7 +37,7 @@ const projectEras = [
       "174 BPM drum & bass pressure - dark, controlled, and built for DJs. Includes drum & bass remixes and reworks of classic Andy K and The Pimpsoul Project material, rebuilt for modern systems.",
   },
 ] as const;
-const soundcloud = await getSoundCloudDashboardData();
+const soundcloud = buildSystem174Catalog(await getSoundCloudDashboardData());
 const selectedTracks = soundcloud.tracks
   .filter((track) => {
     const genre = (track.genre ?? "").trim().toLowerCase();

@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { getSoundCloudDashboardData } from "../../lib/soundcloud";
+import { buildSystem174Catalog } from "../../lib/soundcloud-catalog";
 
 const CACHE_TTL_MS = 600 * 1000;
 
@@ -23,7 +24,7 @@ export const GET: APIRoute = async () => {
     });
   }
 
-  const data = await getSoundCloudDashboardData();
+  const data = buildSystem174Catalog(await getSoundCloudDashboardData());
   const hasData = Boolean(data.me || data.tracks.length || data.playlists.length);
   if (hasData) {
     cache = { data, timestamp: now };
