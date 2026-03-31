@@ -4,22 +4,61 @@ import { ClientRouter } from "astro:transitions";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
 import PersistentSoundCloudPlayer from "../components/PersistentSoundCloudPlayer.astro";
+import {
+  siteAppleTouchIconPath,
+  siteDefaultDescription,
+  siteFaviconIcoPath,
+  siteFaviconPngPath,
+  siteLocale,
+  siteName,
+  siteRobots,
+  siteSocialImageAlt,
+  siteSocialImagePath,
+  siteStructuredData,
+  siteThemeColor,
+  siteTitle,
+} from "../lib/site-meta";
 
-const { title, description = "Industrial pressure-driven artist site", robots = "index,follow" } = Astro.props;
+const { title = siteTitle, description = siteDefaultDescription, robots = siteRobots } = Astro.props;
 const canonicalUrl = Astro.site
   ? new URL(Astro.url.pathname, Astro.site).toString()
   : Astro.url.toString();
+const socialImageUrl = Astro.site
+  ? new URL(siteSocialImagePath, Astro.site).toString()
+  : siteSocialImagePath;
+const faviconIcoUrl = Astro.site
+  ? new URL(siteFaviconIcoPath, Astro.site).toString()
+  : siteFaviconIcoPath;
+const faviconPngUrl = Astro.site
+  ? new URL(siteFaviconPngPath, Astro.site).toString()
+  : siteFaviconPngPath;
+const appleTouchIconUrl = Astro.site
+  ? new URL(siteAppleTouchIconPath, Astro.site).toString()
+  : siteAppleTouchIconPath;
+const isHomePage = Astro.url.pathname === "/";
 ---
 
-<html lang="en">
+<html lang="en-GB">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
     <meta name="robots" content={robots} />
+    <meta name="theme-color" content={siteThemeColor} />
     <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:locale" content={siteLocale} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={socialImageUrl} />
+    <meta property="og:image:alt" content={siteSocialImageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImageUrl} />
     <ClientRouter />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -27,8 +66,11 @@ const canonicalUrl = Astro.site
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Sora:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" href={faviconIcoUrl} sizes="any" />
+    <link rel="icon" type="image/png" href={faviconPngUrl} />
+    <link rel="apple-touch-icon" href={appleTouchIconUrl} />
+    {isHomePage && <script type="application/ld+json" set:html={JSON.stringify(siteStructuredData)} />}
+    <slot name="head" />
     <title>{title}</title>
   </head>
   <body class="site-bg">

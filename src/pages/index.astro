@@ -7,6 +7,7 @@ import BadgeStatus from "../components/BadgeStatus.astro";
 import SoundCloudTrackCard from "../components/SoundCloudTrackCard.astro";
 import { getSoundCloudDashboardData } from "../lib/soundcloud";
 import { getSoundCloudPlayerUrl } from "../lib/soundcloud-embed";
+import { siteTitle } from "../lib/site-meta";
 
 const fallbackCoverUrl = "/textures/bg-main.png";
 const latestDropAppleMusicUrl =
@@ -64,7 +65,7 @@ const selectedTracks = soundcloud.tracks
   }));
 ---
 
-<BaseLayout title="System 174 | Home">
+<BaseLayout title={siteTitle}>
   <Section>
     <div class="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8" id="home">
       <div class="md:col-span-8">
