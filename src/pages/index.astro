@@ -9,6 +9,12 @@ import { getSoundCloudDashboardData } from "../lib/soundcloud";
 import { getSoundCloudPlayerUrl } from "../lib/soundcloud-embed";
 
 const fallbackCoverUrl = "/textures/bg-main.png";
+const latestDropAppleMusicUrl =
+  "https://music.apple.com/gb/album/chasing-shadows-single/1882690504";
+const latestDropAmazonMusicUrl =
+  "https://amazon.co.uk/music/player/albums/B0GR9ZCV6J?marketplaceId=A1F83G8C2ARO7P&musicTerritory=GB&ref=dm_sh_fC1FN6Z7Z2nEpsF8qM1OTvl1k";
+const latestDropSpotifyUrl =
+  "https://open.spotify.com/album/4zz1bGL54iNx6LTiiC3vS1?si=rI8sNXa8TA-EbEjnOAtGHg";
 const soundcloud = await getSoundCloudDashboardData();
 const selectedTracks = soundcloud.tracks
   .filter((track) => {
@@ -73,12 +79,57 @@ const selectedTracks = soundcloud.tracks
           <p class="font-body text-[14px] leading-relaxed text-[#AAB6C6]">Sub Genre: Jungle/Drum'n'bass</p>
           <p class="font-body text-[14px] leading-relaxed text-[#AAB6C6]">Label: SYSTEM 174</p>
           <p class="font-body text-[14px] leading-relaxed text-[#AAB6C6]">UPC: 823191180401</p>
-          <a
-            href="/playlists?genre=Drum+%26+Bass&playlist=2199354848"
-            class="mt-4 inline-block text-sm font-semibold tracking-[0.04em] text-accent hover:text-white transition-colors"
-          >
-            VIEW RELEASE
-          </a>
+          <div class="mt-4 flex flex-wrap gap-3">
+            <a
+              href="/playlists?genre=Drum+%26+Bass&playlist=2199354848"
+              class="inline-block text-sm font-semibold tracking-[0.04em] text-accent hover:text-white transition-colors"
+            >
+              VIEW RELEASE
+            </a>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <a
+              href={latestDropAppleMusicUrl}
+              target="_blank"
+              rel="noreferrer"
+              class="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/5 px-3 py-2 text-xs font-semibold tracking-[0.12em] text-[#E7EDF6] uppercase transition-colors hover:border-[#5CC8FF]/60 hover:text-white"
+            >
+              <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M15.75 3.25a3.8 3.8 0 0 0-2.28 3.52c0 .18.02.37.05.55 1.02.08 2-.29 2.74-1.03.7-.7 1.15-1.76 1.09-2.79-.57.03-1.2.27-1.6.57Z" />
+                <path d="M17.8 12.93c-.02-2.13 1.74-3.16 1.82-3.21-1-.99-2.54-1.12-3.08-1.14-1.31-.13-2.56.77-3.22.77-.67 0-1.7-.75-2.8-.73-1.44.02-2.77.84-3.52 2.15-1.51 2.61-.39 6.49 1.08 8.62.72 1.04 1.58 2.2 2.71 2.16 1.09-.04 1.5-.69 2.82-.69 1.33 0 1.7.69 2.84.66 1.17-.02 1.92-1.05 2.63-2.1.82-1.2 1.16-2.36 1.18-2.42-.03-.01-2.25-.86-2.46-4.07Z" />
+              </svg>
+              <span>Apple</span>
+            </a>
+            <a
+              href={latestDropAmazonMusicUrl}
+              target="_blank"
+              rel="noreferrer"
+              class="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/5 px-3 py-2 text-xs font-semibold tracking-[0.12em] text-[#E7EDF6] uppercase transition-colors hover:border-[#5CC8FF]/60 hover:text-white"
+            >
+              <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M7.9 16.05c1.57 1.14 3.42 1.71 5.54 1.71 2.48 0 4.72-.72 6.72-2.17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                <path d="M17.63 16.14h2.56v2.52" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M14.9 8.34v5.55" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                <circle cx="14.9" cy="6.65" r="1.15" fill="currentColor" />
+                <path d="M9.1 10.4v3.48a2.26 2.26 0 1 1-1.7-2.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span>Amazon</span>
+            </a>
+            <a
+              href={latestDropSpotifyUrl}
+              target="_blank"
+              rel="noreferrer"
+              class="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/5 px-3 py-2 text-xs font-semibold tracking-[0.12em] text-[#E7EDF6] uppercase transition-colors hover:border-[#5CC8FF]/60 hover:text-white"
+            >
+              <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" fill="currentColor" />
+                <path d="M8.2 10.05c2.65-.8 5.5-.65 8.57.44" stroke="#0A0C10" stroke-width="1.55" stroke-linecap="round" />
+                <path d="M8.95 12.63c2.1-.58 4.35-.47 6.77.35" stroke="#0A0C10" stroke-width="1.45" stroke-linecap="round" />
+                <path d="M9.8 15.12c1.67-.4 3.43-.31 5.27.29" stroke="#0A0C10" stroke-width="1.35" stroke-linecap="round" />
+              </svg>
+              <span>Spotify</span>
+            </a>
+          </div>
         </Card>
       </div>
     </div>
