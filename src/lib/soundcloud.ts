@@ -89,6 +89,26 @@ export type SoundCloudDashboardData = {
   playlists: SoundCloudPlaylist[];
 };
 
+export type SoundCloudConnectionStatus = {
+  checkedAt: string;
+  status:
+    | "ok"
+    | "ok_missing_refresh_token"
+    | "missing_config"
+    | "missing_tokens"
+    | "refresh_failed"
+    | "api_failed";
+  message: string;
+  error: string | null;
+  hasClientConfig: boolean;
+  hasAccessToken: boolean;
+  hasRefreshToken: boolean;
+  redirectUri: string;
+  me: SoundCloudMe | null;
+  trackCount: number;
+  playlistCount: number;
+};
+
 type OAuthTokenResponse = {
   access_token: string;
   refresh_token?: string;
@@ -448,6 +468,84 @@ export async function getSoundCloudTokenSnapshot(): Promise<SoundCloudTokenSnaps
     hasAccessToken: Boolean(tokenState.accessToken),
     hasRefreshToken: Boolean(tokenState.refreshToken),
   };
+}
+
+export async function getSoundCloudConnectionStatus(): Promise<SoundCloudConnectionStatus> {
+  await loadPersistedTokens(true);
+
+  const authConfig = getSoundCloudAuthConfig();
+  const snapshot = await getSoundCloudTokenSnapshot();
+  const baseStatus = {
+    checkedAt: new Date().toISOString(),
+    hasClientConfig: authConfig.hasClientConfig,
+    hasAccessToken: snapshot.hasAccessToken,
+    hasRefreshToken: snapshot.hasRefreshToken,
+    redirectUri: authConfig.redirectUri,
+    me: null,
+    trackCount: 0,
+    playlistCount: 0,
+  } as const;
+
+  if (!authConfig.hasClientConfig) {
+    return {
+      ...baseStatus,
+      status: "missing_config",
+      message: "SoundCloud OAuth client configuration is missing from the environment.",
+      error: null,
+    };
+  }
+
+  if (!snapshot.hasAccessToken && !snapshot.hasRefreshToken) {
+    return {
+      ...baseStatus,
+      status: "missing_tokens",
+      message: "No SoundCloud access or refresh token is available on the server.",
+      error: null,
+    };
+  }
+
+  try {
+    const [me, tracks, playlists] = await Promise.all([getMe(), getMyTracks(100), getMyPlaylists(100)]);
+
+    if (!snapshot.hasRefreshToken) {
+      return {
+        ...baseStatus,
+        status: "ok_missing_refresh_token",
+        message:
+          "SoundCloud requests are working, but no refresh token is stored. The current access token may stop working when it expires.",
+        error: null,
+        me,
+        trackCount: tracks.length,
+        playlistCount: playlists.length,
+      };
+    }
+
+    return {
+      ...baseStatus,
+      status: "ok",
+      message: "SoundCloud configuration, tokens, and API requests are all working.",
+      error: null,
+      me,
+      trackCount: tracks.length,
+      playlistCount: playlists.length,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const status =
+      message.includes("token refresh failed") || message.includes("Missing SoundCloud refresh token")
+        ? "refresh_failed"
+        : "api_failed";
+
+    return {
+      ...baseStatus,
+      status,
+      message:
+        status === "refresh_failed"
+          ? "SoundCloud tokens are present, but refreshing or reusing them failed."
+          : "SoundCloud API requests failed even though configuration and tokens appear to exist.",
+      error: message,
+    };
+  }
 }
 
 export async function scRequest(pathname: string, init?: RequestInit) {

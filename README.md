@@ -51,6 +51,8 @@ Also add the same callback URL in your SoundCloud app settings.
 
 If you cannot read `.soundcloud.tokens.json` on the deployed host, you can temporarily set `SOUNDCLOUD_TOKEN_EXPORT_KEY` on the server, visit `/soundcloud/token-export`, enter that key, copy the current tokens into your persistent env, then remove `SOUNDCLOUD_TOKEN_EXPORT_KEY` again.
 
+If you need to diagnose the live SoundCloud connection without exposing the raw tokens, visit `/soundcloud/status` and use the same `SOUNDCLOUD_TOKEN_EXPORT_KEY` to view the current config/token/API health check.
+
 ## Hostinger deploy settings
 
 - Install command: `npm install`
