@@ -42,9 +42,9 @@ If your host clears the application filesystem on restart or deploy, point `SOUN
 - `off` (default): lazy continuous scroll
 - `on`: numbered previous/next pagination
 
-For staging on `system174.andrewkennedydev.com`, set:
+For `system174.co.uk`, set:
 
-- `SOUNDCLOUD_REDIRECT_URI=https://system174.andrewkennedydev.com/soundcloud/callback`
+- `SOUNDCLOUD_REDIRECT_URI=https://system174.co.uk/soundcloud/callback`
 
 Also add the same callback URL in your SoundCloud app settings.
 

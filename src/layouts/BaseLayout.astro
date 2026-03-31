@@ -6,6 +6,9 @@ import Footer from "../components/Footer.astro";
 import PersistentSoundCloudPlayer from "../components/PersistentSoundCloudPlayer.astro";
 
 const { title, description = "Industrial pressure-driven artist site" } = Astro.props;
+const canonicalUrl = Astro.site
+  ? new URL(Astro.url.pathname, Astro.site).toString()
+  : Astro.url.toString();
 ---
 
 <html lang="en">
@@ -14,6 +17,8 @@ const { title, description = "Industrial pressure-driven artist site" } = Astro.
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:url" content={canonicalUrl} />
     <ClientRouter />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
