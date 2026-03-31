@@ -63,7 +63,9 @@ export const siteStructuredData = {
       },
       sameAs: [
         "https://soundcloud.com/system174",
-        "https://music.amazon.de/artists/B0GRB5V6SD/system-174",
+        "https://music.apple.com/gb/artist/system-174/1882690381",
+        "https://open.spotify.com/artist/3atPE4TuVWhu8uV9p0QbH6",
+        "https://music.amazon.co.uk/artists/B0GR9Z1SFX/system-174",
       ],
     },
     {
