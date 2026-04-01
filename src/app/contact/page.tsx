@@ -5,7 +5,8 @@ import { buildPageMetadata } from "@/lib/site-meta";
 
 export const metadata = buildPageMetadata({
   title: "SYSTEM 174 | Contact",
-  description: "Management, verified platform links, and legacy project outlets.",
+  description:
+    "Management, verified SYSTEM 174 platform links, and legacy outlets for The Pimpsoul Project.",
   path: "/contact",
 });
 
@@ -73,7 +74,7 @@ export default function ContactPage() {
   return (
     <Section
       title="CONTACT"
-      description="Management, verified platform links, and legacy project outlets."
+      description="Management, verified SYSTEM 174 platform links, and legacy outlets for The Pimpsoul Project."
       headingLevel={1}
     >
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
@@ -86,8 +87,12 @@ export default function ContactPage() {
               SYSTEM 174
             </h2>
             <p className="mt-4 font-body text-[15px] leading-relaxed text-[#AAB6C6]">
-              The active project. Dark, DJ-focused drum &amp; bass built for pressure, with
+              The active project. Dark, DJ-focused drum &amp; bass built for pressure, with the
               current artist pages verified across the main streaming platforms below.
+            </p>
+            <p className="mt-4 font-body text-[15px] leading-relaxed text-[#AAB6C6]">
+              Use these links for the live artist identity, current releases, and the active
+              catalogue.
             </p>
             <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {system174Links.map((link) => (
@@ -141,7 +146,8 @@ export default function ContactPage() {
             </h2>
             <p className="mt-4 font-body text-[15px] leading-relaxed text-[#AAB6C6]">
               Archive links for the completed crossover chapter. No new releases are planned under
-              this name, but the catalogue remains live across the outlets below.
+              this name, but the catalogue remains live across the outlets below as legacy
+              listening.
             </p>
             <ul className="mt-4 space-y-3">
               {pimpsoulLinks.map((link) => (
@@ -165,6 +171,10 @@ export default function ContactPage() {
           <Card>
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-[#AAB6C6]">NOTES</p>
             <p className="mt-3 font-body text-[14px] leading-relaxed text-[#AAB6C6]">
+              Use SYSTEM 174 for current releases, management, and active artist platforms. The
+              Pimpsoul Project links are kept here for archive access only.
+            </p>
+            <p className="mt-4 font-body text-[14px] leading-relaxed text-[#AAB6C6]">
               Verified for SYSTEM 174: SoundCloud, Spotify, Apple Music, and Amazon Music. Amazon
               appears to use region-specific artist URLs, so this page uses the UK artist page.
             </p>

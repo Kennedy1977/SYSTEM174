@@ -24,6 +24,7 @@ Copy `.env.example` to `.env` and fill in real values.
 
 Required:
 
+- `SITE_URL`
 - `SOUNDCLOUD_CLIENT_ID`
 - `SOUNDCLOUD_CLIENT_SECRET`
 - `SOUNDCLOUD_REDIRECT_URI`
@@ -32,6 +33,7 @@ Required:
 
 Optional:
 
+- `SITE_VARIANT`
 - `SOUNDCLOUD_TOKENS_PATH`
 - `SOUNDCLOUD_CATALOG_OVERRIDES_PATH`
 - `SOUNDCLOUD_PAGINATION`
@@ -51,9 +53,17 @@ Track-to-brand website assignments are stored separately in `.soundcloud.catalog
 
 For `system174.co.uk`, set:
 
+- `SITE_VARIANT=system174`
 - `SOUNDCLOUD_REDIRECT_URI=https://system174.co.uk/soundcloud/callback`
 
 Also add the same callback URL in your SoundCloud app settings.
+
+For `pimpsoul.co.uk`, set:
+
+- `SITE_VARIANT=pimpsoul`
+- `SITE_URL=https://pimpsoul.co.uk`
+
+The `pimpsoul` variant switches the heading typeface to `DraftWerk Bold` while leaving the body copy unchanged.
 
 ## Admin dashboard
 

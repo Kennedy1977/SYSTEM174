@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const siteName = "SYSTEM 174";
 export const siteTitle = "SYSTEM 174 | Official Site";
 export const siteDefaultDescription =
-  "SYSTEM 174 is the current drum & bass project of Andy K - 174 BPM pressure, dark DJ-focused tracks, and connected legacy material from Andy K and The Pimpsoul Project.";
+  "SYSTEM 174 is the active drum & bass project of Andy K - 174 BPM pressure, dark DJ-focused tracks, and selected reworks of older ideas rebuilt as SYSTEM 174 releases. The Pimpsoul Project is a completed crossover alias and legacy catalogue.";
 export const siteThemeColor = "#000000";
 export const siteLocale = "en_GB";
 export const siteRobots =
@@ -94,7 +94,7 @@ export const siteStructuredData = {
       },
       mentions: [{ "@id": `${siteOriginBase}/#andyk` }, { "@id": `${siteOriginBase}/#pimpsoul` }],
       description:
-        "SYSTEM 174 is the current active drum and bass project of Andy K. Andy K and The Pimpsoul Project are connected archive and legacy identities by the same artist.",
+        "SYSTEM 174 is the active drum and bass project of Andy K. The Pimpsoul Project is a completed crossover alias and legacy catalogue by the same artist.",
     },
     {
       "@type": "Person",
@@ -111,7 +111,7 @@ export const siteStructuredData = {
       alternateName: "System 174",
       url: `${siteOriginBase}/`,
       description:
-        "SYSTEM 174 is the current active drum and bass project of Andy K, focused on dark, controlled, DJ-functional 174 BPM music.",
+        "SYSTEM 174 is the active drum and bass project of Andy K, focused on dark, controlled, DJ-functional 174 BPM music.",
       genre: ["Drum and Bass", "Jungle", "Breakbeat", "Techno"],
       founder: {
         "@id": `${siteOriginBase}/#andyk-artist`,
@@ -132,7 +132,7 @@ export const siteStructuredData = {
       name: "The Pimpsoul Project",
       url: `${siteOriginBase}/#the-pimpsoul-project`,
       description:
-        "A completed techno x drum and bass crossover project by Andy K active from 2023 to 2025.",
+        "A completed techno x drum and bass crossover alias by Andy K, active from 2023 to 2025 and now retained as legacy catalogue.",
       founder: {
         "@id": `${siteOriginBase}/#andyk-artist`,
       },

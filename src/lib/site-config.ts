@@ -2,6 +2,8 @@ function getEnvValue(key: string) {
   return process.env[key] ?? "";
 }
 
+export type SiteVariant = "system174" | "pimpsoul";
+
 function parseBooleanFlag(value: string, defaultValue = false) {
   const normalized = value.trim().toLowerCase();
 
@@ -18,6 +20,25 @@ function parseBooleanFlag(value: string, defaultValue = false) {
   }
 
   return defaultValue;
+}
+
+export function getSiteVariant(): SiteVariant {
+  const explicitVariant = getEnvValue("SITE_VARIANT").trim().toLowerCase();
+
+  if (explicitVariant === "pimpsoul") {
+    return "pimpsoul";
+  }
+
+  if (explicitVariant === "system174") {
+    return "system174";
+  }
+
+  const siteUrl = getEnvValue("SITE_URL").trim().toLowerCase();
+  if (siteUrl.includes("pimpsoul.co.uk")) {
+    return "pimpsoul";
+  }
+
+  return "system174";
 }
 
 export function isSoundCloudPaginationEnabled() {

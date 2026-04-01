@@ -39,13 +39,13 @@ const projectEras = [
     name: "The Pimpsoul Project",
     years: "2023-2025",
     description:
-      "A completed chapter of techno x drum & bass crossover experiments - club-focused, bass-led, and built for movement. No further releases are planned under this name.",
+      "A completed chapter of techno x drum & bass crossover experiments - club-focused, bass-led, and built for movement. This is now legacy catalogue and no further releases are planned under this name.",
   },
   {
     name: "System 174",
     years: "2025-present",
     description:
-      "174 BPM drum & bass pressure - dark, controlled, and built for DJs. Includes drum & bass remixes and reworks of classic Andy K and The Pimpsoul Project material, rebuilt for modern systems.",
+      "174 BPM drum & bass pressure - dark, controlled, and built for DJs. This is the active release identity, including only SYSTEM 174 originals plus older ideas rebuilt as SYSTEM 174 mixes, edits, or reworks.",
   },
 ] as const;
 
@@ -114,6 +114,11 @@ export default async function HomePage() {
             <p className="mt-4 font-body text-[15px] leading-relaxed text-[#AAB6C6]">
               In short, SYSTEM 174 is controlled, underground drum &amp; bass pressure, cold,
               mechanical, and built for dark rooms and big sound systems.
+            </p>
+            <p className="mt-4 font-body text-[15px] leading-relaxed text-[#AAB6C6]">
+              The Pimpsoul Project sits outside that brief. It was a separate crossover chapter
+              built around techno and drum &amp; bass hybrids, and it now remains online as
+              completed legacy catalogue rather than the active identity.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <ButtonPrimary href="/music">LISTEN</ButtonPrimary>
@@ -187,6 +192,54 @@ export default async function HomePage() {
       </Section>
 
       <Section
+        title="CURRENT VS LEGACY"
+        description="SYSTEM 174 is the active release identity. The Pimpsoul Project remains online as a completed crossover catalogue."
+      >
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Card className="border-[#5CC8FF]/35">
+            <p className="label-ui">ACTIVE PROJECT</p>
+            <h3 className="mt-3 font-display text-xl uppercase tracking-[-0.01em] text-white">
+              SYSTEM 174
+            </h3>
+            <p className="mt-4 font-body text-[15px] leading-relaxed text-[#AAB6C6]">
+              Pure 174 BPM drum &amp; bass pressure. Dark rooms, DJ-focused arrangements, and
+              modern system-weight tracks designed to function in the mix.
+            </p>
+            <p className="mt-4 font-body text-[15px] leading-relaxed text-[#AAB6C6]">
+              If older ideas return here, they return as new SYSTEM 174 versions, reworks, mixes,
+              or edits rather than as straight archive uploads.
+            </p>
+          </Card>
+
+          <Card>
+            <p className="label-ui">LEGACY PROJECT</p>
+            <h3 className="mt-3 font-display text-xl uppercase tracking-[-0.01em] text-white">
+              THE PIMPSOUL PROJECT
+            </h3>
+            <p className="mt-4 font-body text-[15px] leading-relaxed text-[#AAB6C6]">
+              A completed techno x drum &amp; bass crossover alias. Bass-led, club-minded, and
+              designed around hybrid movement rather than a pure drum &amp; bass brief.
+            </p>
+            <p className="mt-4 font-body text-[15px] leading-relaxed text-[#AAB6C6]">
+              The catalogue stays online as part of the artist history, but no new releases are
+              planned under this name.
+            </p>
+          </Card>
+        </div>
+
+        <div className="mt-6">
+          <Card>
+            <p className="font-body text-[15px] leading-relaxed text-[#AAB6C6]">
+              Use <span className="text-white">SYSTEM 174</span> for current releases, active
+              artist links, and DJ-facing drum &amp; bass material. Use{" "}
+              <span className="text-white">The Pimpsoul Project</span> for archive listening and
+              the completed crossover chapter.
+            </p>
+          </Card>
+        </div>
+      </Section>
+
+      <Section
         title="THREE ERAS"
         description="Three eras. One artist. From the underground archives of Andy K, through the crossover experiments of The Pimpsoul Project, to the current drum & bass focus of SYSTEM 174."
       >
@@ -220,8 +273,9 @@ export default async function HomePage() {
               Pimpsoul Project, to the current drum &amp; bass focus of SYSTEM 174.
             </p>
             <p className="mt-4 font-body text-[15px] leading-relaxed text-[#AAB6C6]">
-              SYSTEM 174 is the current active project. Andy K and The Pimpsoul Project are
-              archive and legacy identities connected to the same artist.
+              SYSTEM 174 is the active project. Andy K and The Pimpsoul Project remain connected
+              artist history, but they sit here as archive and legacy identities rather than the
+              current release brief.
             </p>
           </Card>
         </div>

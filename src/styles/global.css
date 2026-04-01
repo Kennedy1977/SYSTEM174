@@ -20,6 +20,16 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "DraftWerk Bold";
+  src:
+    url("../webFonts/DraftWerkBold/font.woff2") format("woff2"),
+    url("../webFonts/DraftWerkBold/font.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   *,
   *::before,
@@ -37,6 +47,15 @@
 
   body {
     font-family: "Tosia Regular", "Segoe UI", system-ui, sans-serif;
+    --font-display-family: "Tosia Light", ui-sans-serif, system-ui;
+    --font-brand-family: "Tosia Light", ui-sans-serif, system-ui;
+    --site-bg-image: url("/textures/bg-main.png");
+  }
+
+  body[data-site-variant="pimpsoul"] {
+    --font-display-family: "DraftWerk Bold", ui-sans-serif, system-ui;
+    --font-brand-family: "DraftWerk Bold", ui-sans-serif, system-ui;
+    --site-bg-image: url("/textures/bg-pimpsoul.png");
   }
 
   img,
@@ -58,7 +77,7 @@
 
 @layer utilities {
   .font-display {
-    font-family: "Tosia Light", ui-sans-serif, system-ui;
+    font-family: var(--font-display-family);
     letter-spacing: 0.15ch;
   }
 
@@ -67,7 +86,7 @@
   }
 
   .font-brand {
-    font-family: "Tosia Light", ui-sans-serif, system-ui;
+    font-family: var(--font-brand-family);
     letter-spacing: 0.15ch;
   }
 
@@ -94,7 +113,7 @@
   .site-bg-main {
     position: fixed;
     inset: 0;
-    background-image: url("/textures/bg-main.png");
+    background-image: var(--site-bg-image);
     background-repeat: no-repeat;
     background-position: center center;
     background-size: 1536px 1024px;

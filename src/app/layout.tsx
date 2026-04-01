@@ -8,6 +8,7 @@ import Nav from "@/components/Nav";
 import PageLifecycle from "@/components/PageLifecycle";
 import PersistentSoundCloudPlayer from "@/components/PersistentSoundCloudPlayer";
 import RouteTransition from "@/components/RouteTransition";
+import { getSiteVariant } from "@/lib/site-config";
 import {
   siteAppleTouchIconPath,
   siteDefaultDescription,
@@ -66,9 +67,11 @@ export default function RootLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const siteVariant = getSiteVariant();
+
   return (
     <html lang="en-GB">
-      <body className="site-bg">
+      <body className="site-bg" data-site-variant={siteVariant}>
         <AnalyticsBoot />
         <Suspense fallback={null}>
           <PageLifecycle />
