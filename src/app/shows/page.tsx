@@ -3,7 +3,7 @@ import Card from "@/components/Card";
 import Section from "@/components/Section";
 import ShowRow from "@/components/ShowRow";
 import { pastShows, upcomingShows } from "@/data/site";
-import { buildPageMetadata } from "@/lib/site-meta";
+import { buildPageMetadata, siteName } from "@/lib/site-meta";
 import {
   getSearchParamValue,
   resolvePageSearchParams,
@@ -11,7 +11,7 @@ import {
 } from "@/lib/next-search";
 
 export const metadata = buildPageMetadata({
-  title: "SYSTEM 174 | Shows",
+  title: `${siteName} | Shows`,
   description: "Upcoming runs first. Past dates available below.",
   path: "/shows",
 });

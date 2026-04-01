@@ -32,6 +32,10 @@ const YEAR_RANGE_PATTERN =
   /\b(?:19|20)\d{2}\s*(?:-|\u2013)\s*(?:19|20)\d{2}\b/;
 
 type SoundCloudCatalogAutoAssignment = "system174" | "pimpsoul" | "andyk";
+export type SoundCloudCatalogBrandTarget = Exclude<
+  SoundCloudCatalogAutoAssignment,
+  "andyk"
+>;
 
 export type SoundCloudCatalogEffectiveAssignment =
   | SoundCloudCatalogAutoAssignment
@@ -199,6 +203,17 @@ function shouldIncludePlaylist(playlist: SoundCloudPlaylist) {
   );
 }
 
+function shouldIncludePlaylistForTarget(
+  playlist: SoundCloudPlaylist,
+  target: SoundCloudCatalogBrandTarget,
+) {
+  if (target === "system174") {
+    return shouldIncludePlaylist(playlist);
+  }
+
+  return hasPimpsoulKeyword(playlist.title);
+}
+
 export function buildTrackCatalogDecisions(
   data: SoundCloudDashboardData,
   overrides: SoundCloudCatalogOverrideMap = {},
@@ -233,9 +248,24 @@ export function buildSystem174Catalog(
   data: SoundCloudDashboardData,
   overrides: SoundCloudCatalogOverrideMap = {},
 ): SoundCloudDashboardData {
+  return buildBrandCatalog(data, overrides, "system174");
+}
+
+export function buildPimpsoulCatalog(
+  data: SoundCloudDashboardData,
+  overrides: SoundCloudCatalogOverrideMap = {},
+): SoundCloudDashboardData {
+  return buildBrandCatalog(data, overrides, "pimpsoul");
+}
+
+export function buildBrandCatalog(
+  data: SoundCloudDashboardData,
+  overrides: SoundCloudCatalogOverrideMap = {},
+  target: SoundCloudCatalogBrandTarget = "system174",
+): SoundCloudDashboardData {
   const decisions = buildTrackCatalogDecisions(data, overrides);
   const visibleTracks = decisions
-    .filter((decision) => decision.visibleOnSystem174)
+    .filter((decision) => decision.effectiveAssignment === target)
     .map((decision) => decision.track);
   const visibleTrackIds = new Set<number>(
     visibleTracks.map((track) => track.id),
@@ -248,7 +278,6 @@ export function buildSystem174Catalog(
   );
 
   const visiblePlaylists = data.playlists
-    .filter((playlist) => shouldIncludePlaylist(playlist))
     .map((playlist) => ({
       ...playlist,
       tracks: playlist.tracks?.filter((playlistTrack) => {
@@ -259,15 +288,24 @@ export function buildSystem174Catalog(
 
         const decision = decisionsById.get(playlistTrack.id);
         if (decision) {
-          return decision.visibleOnSystem174;
+          return decision.effectiveAssignment === target;
         }
 
         const legacyBranded = isLegacyTrackTitle(playlistTrack.title);
-        return (
-          !legacyBranded || hasSystem174OverrideTitle(playlistTrack.title)
-        );
+        if (target === "system174") {
+          return (
+            !legacyBranded || hasSystem174OverrideTitle(playlistTrack.title)
+          );
+        }
+
+        return hasPimpsoulKeyword(playlistTrack.title);
       }),
-    }));
+    }))
+    .filter(
+      (playlist) =>
+        (playlist.tracks?.length ?? 0) > 0 ||
+        shouldIncludePlaylistForTarget(playlist, target),
+    );
 
   return {
     ...data,

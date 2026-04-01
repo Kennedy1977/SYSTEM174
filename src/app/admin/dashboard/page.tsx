@@ -1,10 +1,10 @@
 import Section from "@/components/Section";
 import SoundCloudAdminNav from "@/components/SoundCloudAdminNav";
 import SoundCloudStatusPanel from "@/components/SoundCloudStatusPanel";
-import { buildPageMetadata } from "@/lib/site-meta";
+import { buildPageMetadata, siteName } from "@/lib/site-meta";
 
 export const metadata = buildPageMetadata({
-  title: "SYSTEM 174 | Admin Dashboard",
+  title: `${siteName} | Admin Dashboard`,
   description:
     "Protected admin utility for checking live SoundCloud connection health, refreshing the cache, and assigning tracks.",
   path: "/admin/dashboard",

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navLinks } from "@/data/site";
+import { siteNavLabel } from "@/lib/site-meta";
 
 export default function Nav() {
   const pathname = usePathname();
@@ -104,7 +105,7 @@ export default function Nav() {
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-6 lg:px-8">
         <Link href="/" className="font-mono text-xs uppercase tracking-[0.2em] text-[#AAB6C6]">
-          SYSTEM 174
+          {siteNavLabel}
         </Link>
         <div ref={desktopNavRef} className="relative hidden items-center gap-2 lg:flex">
           {navLinks.map((link) => {

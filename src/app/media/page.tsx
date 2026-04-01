@@ -3,15 +3,22 @@ import Card from "@/components/Card";
 import MediaDownloadCard from "@/components/MediaDownloadCard";
 import Section from "@/components/Section";
 import { mediaDownloads } from "@/data/site";
-import { buildPageMetadata } from "@/lib/site-meta";
+import { getSiteVariant } from "@/lib/site-config";
+import { buildPageMetadata, siteName } from "@/lib/site-meta";
 
 export const metadata = buildPageMetadata({
-  title: "SYSTEM 174 | Media",
+  title: `${siteName} | Media`,
   description: "Press assets and documents for promoters, venues, and editorial.",
   path: "/media",
 });
 
 export default function MediaPage() {
+  const siteVariant = getSiteVariant();
+  const shortBio =
+    siteVariant === "pimpsoul"
+      ? "The Pimpsoul Project delivers bass-led crossover pressure, hybrid club structures, and techno x drum & bass movement."
+      : "SYSTEM 174 engineers dark, high-pressure sets optimized for industrial rooms and peak-hour endurance.";
+
   return (
     <Section
       title="MEDIA KIT"
@@ -32,8 +39,7 @@ export default function MediaPage() {
               Short Bio
             </p>
             <p className="mt-3 text-[15px] leading-relaxed text-[#AAB6C6]">
-              SYSTEM 174 engineers dark, high-pressure sets optimized for industrial rooms and
-              peak-hour endurance.
+              {shortBio}
             </p>
             <div className="mt-4">
               <ButtonSecondary>COPY</ButtonSecondary>

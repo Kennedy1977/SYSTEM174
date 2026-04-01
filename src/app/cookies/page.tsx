@@ -5,12 +5,14 @@ import {
   siteAnalyticsMeasurementId,
   siteConsentCookieDurationDays,
   siteConsentCookieName,
+  siteHostName,
+  siteName,
 } from "@/lib/site-meta";
 
 export const metadata = buildPageMetadata({
-  title: "Cookie Notice | SYSTEM 174",
+  title: `Cookie Notice | ${siteName}`,
   description:
-    "Cookie notice for system174.co.uk covering essential consent storage and optional Google Analytics.",
+    `Cookie notice for ${siteHostName} covering essential consent storage and optional Google Analytics.`,
   path: "/cookies",
 });
 
@@ -81,7 +83,7 @@ export default function CookiesPage() {
         <Card>
           <p className="label-ui">More Information</p>
           <h2 className="mt-3 font-display text-2xl uppercase tracking-[-0.015em] text-white">
-            How this works on SYSTEM 174
+            How this works on {siteName}
           </h2>
           <p className="mt-4 font-body text-[15px] leading-relaxed text-[#AAB6C6]">
             The Google tag loads site-wide, but analytics storage is denied by default. Analytics

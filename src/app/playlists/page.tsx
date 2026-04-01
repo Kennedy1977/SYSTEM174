@@ -3,9 +3,9 @@ import AutoSubmitForm from "@/components/AutoSubmitForm";
 import Card from "@/components/Card";
 import Section from "@/components/Section";
 import { getCachedSoundCloudDashboardData } from "@/lib/soundcloud-dashboard-cache";
-import { buildPageMetadata } from "@/lib/site-meta";
-import { isSoundCloudPaginationEnabled } from "@/lib/site-config";
-import { buildSystem174Catalog } from "@/lib/soundcloud-catalog";
+import { buildPageMetadata, siteName } from "@/lib/site-meta";
+import { getSiteVariant, isSoundCloudPaginationEnabled } from "@/lib/site-config";
+import { buildBrandCatalog } from "@/lib/soundcloud-catalog";
 import { getSoundCloudCatalogOverrides } from "@/lib/soundcloud-catalog-overrides";
 import { getSoundCloudPlayerUrl } from "@/lib/soundcloud-embed";
 import {
@@ -15,7 +15,7 @@ import {
 } from "@/lib/next-search";
 
 export const metadata = buildPageMetadata({
-  title: "SYSTEM 174 | Playlists",
+  title: `${siteName} | Playlists`,
   description: "All SoundCloud playlists, synced automatically.",
   path: "/playlists",
 });
@@ -27,8 +27,6 @@ type PlaylistsPageProps = {
 };
 
 const PLAYLISTS_PAGE_SIZE = 12;
-const fallbackCoverUrl = "/textures/bg-main.png";
-
 const isCoverOrBootleg = (item: { title: string }) => {
   const title = item.title.toLowerCase();
   return title.includes("cover") || title.includes("bootleg");
@@ -48,12 +46,21 @@ export default async function PlaylistsPage({
   searchParams,
 }: PlaylistsPageProps) {
   const params = await resolvePageSearchParams(searchParams);
+  const siteVariant = getSiteVariant();
   const [dashboardData, catalogOverrides] = await Promise.all([
     getCachedSoundCloudDashboardData(),
     getSoundCloudCatalogOverrides(),
   ]);
-  const soundcloud = buildSystem174Catalog(dashboardData, catalogOverrides);
+  const soundcloud = buildBrandCatalog(
+    dashboardData,
+    catalogOverrides,
+    siteVariant === "pimpsoul" ? "pimpsoul" : "system174",
+  );
   const playlists = soundcloud.playlists;
+  const fallbackCoverUrl =
+    siteVariant === "pimpsoul"
+      ? "/textures/bg-pimpsoul.png"
+      : "/textures/bg-main.png";
 
   const selectedGenre = getSearchParamValue(params, "genre").trim();
   const selectedGenreKey = selectedGenre.toLowerCase();

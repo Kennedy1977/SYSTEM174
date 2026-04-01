@@ -6,14 +6,16 @@ import {
   siteConsentCookieDurationDays,
   siteConsentCookieName,
   siteControllerName,
+  siteHostName,
+  siteName,
   sitePrivacyContactEmail,
   sitePrivacyLastUpdated,
 } from "@/lib/site-meta";
 
 export const metadata = buildPageMetadata({
-  title: "Privacy Policy | SYSTEM 174",
+  title: `Privacy Policy | ${siteName}`,
   description:
-    "Privacy policy for system174.co.uk covering analytics, cookies, technical logs, and contact by email.",
+    `Privacy policy for ${siteHostName} covering analytics, cookies, technical logs, and contact by email.`,
   path: "/privacy",
 });
 
@@ -21,7 +23,7 @@ export default function PrivacyPage() {
   return (
     <Section
       title="PRIVACY POLICY"
-      description="This policy explains what personal data system174.co.uk may process, why it is used, and what choices and rights visitors have."
+      description={`This policy explains what personal data ${siteHostName} may process, why it is used, and what choices and rights visitors have.`}
       headingLevel={1}
     >
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

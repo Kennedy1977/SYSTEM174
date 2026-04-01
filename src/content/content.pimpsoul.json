@@ -1,0 +1,24 @@
+{
+  "name": "The Pimpsoul Project",
+  "navLabel": "PIMPSOUL PROJECT",
+  "title": "The Pimpsoul Project | Official Site",
+  "defaultDescription": "The Pimpsoul Project is the techno x drum & bass crossover project of Andy K - bass-led club tracks, hybrid pressure, and legacy releases preserved as a standalone catalogue.",
+  "socialImageAlt": "The Pimpsoul Project official artist artwork",
+  "controllerName": "Andy K trading as The Pimpsoul Project",
+  "consentCookieName": "pimpsoul_cookie_consent",
+  "profileDescription": "The Pimpsoul Project is the techno x drum and bass crossover alias of Andy K, preserved online as a standalone catalogue.",
+  "personDescription": "Electronic music producer and creator of The Pimpsoul Project and other artist identities.",
+  "musicGroupId": "pimpsoul",
+  "musicGroupName": "The Pimpsoul Project",
+  "musicGroupAlternateName": "Pimpsoul Project",
+  "musicGroupDescription": "The Pimpsoul Project is a techno x drum and bass crossover alias by Andy K, built around bass-led club tracks and hybrid movement.",
+  "musicGroupGenre": ["Techno", "Drum and Bass", "Breakbeat", "Bass Music","Electronic","House"],
+  "sameAs": [
+    "https://soundcloud.com/pimpsoul-project",
+    "https://music.apple.com/gb/artist/the-pimpsoul-project/1750852619",
+    "https://music.amazon.com/artists/B0D5FP86SF/the-pimpsoul-project",
+    "https://www.youtube.com/@PIMPSOUL",
+    "https://music.youtube.com/channel/UC1Vsx7jaPa0oXfvC9QLNZaA",
+    "https://www.instagram.com/thepimpsoulproject/"
+  ]
+}

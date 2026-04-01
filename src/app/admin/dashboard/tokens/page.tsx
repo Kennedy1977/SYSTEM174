@@ -1,10 +1,10 @@
 import Section from "@/components/Section";
 import SoundCloudAdminNav from "@/components/SoundCloudAdminNav";
 import SoundCloudTokenExportPanel from "@/components/SoundCloudTokenExportPanel";
-import { buildPageMetadata } from "@/lib/site-meta";
+import { buildPageMetadata, siteName } from "@/lib/site-meta";
 
 export const metadata = buildPageMetadata({
-  title: "SYSTEM 174 | Admin Token Export",
+  title: `${siteName} | Admin Token Export`,
   description:
     "Protected admin utility for exporting the current SoundCloud OAuth token pair.",
   path: "/admin/dashboard/tokens",
