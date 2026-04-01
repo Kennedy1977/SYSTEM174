@@ -29,6 +29,9 @@ npm run build
 npm run start
 ```
 
+If your host starts the app before a compiled `dist/` exists, `npm run start`
+will trigger a build automatically.
+
 ## Environment variables
 
 Copy `.env.example` to `.env`.
