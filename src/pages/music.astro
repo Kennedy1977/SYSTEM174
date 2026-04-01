@@ -281,46 +281,48 @@ const clientTracksJson = JSON.stringify(clientTracks).replaceAll("<", "\\u003c")
   (() => {
     const form = document.querySelector("[data-live-search-form]");
     const filterForm = document.querySelector("[data-filter-form]");
-    if (!form) return;
-
-    const input = form.querySelector("#track-search");
-    if (!(input instanceof HTMLInputElement)) return;
+    if (!(form instanceof HTMLFormElement) && !(filterForm instanceof HTMLFormElement)) return;
 
     let timer;
 
-    const navigateToSearch = () => {
-      const q = input.value.trim();
-      const url = new URL(window.location.href);
+    if (form instanceof HTMLFormElement) {
+      const input = form.querySelector("#track-search");
+      if (input instanceof HTMLInputElement) {
+        const navigateToSearch = () => {
+          const q = input.value.trim();
+          const url = new URL(window.location.href);
 
-      if (q) url.searchParams.set("q", q);
-      else url.searchParams.delete("q");
-      url.searchParams.delete("page");
+          if (q) url.searchParams.set("q", q);
+          else url.searchParams.delete("q");
+          url.searchParams.delete("page");
 
-      const target = `${url.pathname}${url.search}`;
-      const current = `${window.location.pathname}${window.location.search}`;
-      if (target !== current) {
-        navigate(target);
+          const target = `${url.pathname}${url.search}`;
+          const current = `${window.location.pathname}${window.location.search}`;
+          if (target !== current) {
+            navigate(target);
+          }
+        };
+
+        input.addEventListener("input", () => {
+          window.clearTimeout(timer);
+          timer = window.setTimeout(navigateToSearch, 220);
+        });
+
+        input.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            window.clearTimeout(timer);
+            navigateToSearch();
+          }
+        });
+
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          window.clearTimeout(timer);
+          navigateToSearch();
+        });
       }
-    };
-
-    input.addEventListener("input", () => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(navigateToSearch, 220);
-    });
-
-    input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        window.clearTimeout(timer);
-        navigateToSearch();
-      }
-    });
-
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      window.clearTimeout(timer);
-      navigateToSearch();
-    });
+    }
 
     if (filterForm instanceof HTMLFormElement) {
       const selects = Array.from(filterForm.querySelectorAll("select"));
@@ -338,7 +340,11 @@ const clientTracksJson = JSON.stringify(clientTracks).replaceAll("<", "\\u003c")
           if (params.get("sort") === "newest") params.delete("sort");
           params.delete("page");
           const query = params.toString();
-          navigate(query ? `/music?${query}` : "/music");
+          const target = query ? `/music?${query}` : "/music";
+          const current = `${window.location.pathname}${window.location.search}`;
+          if (target !== current) {
+            window.location.assign(target);
+          }
         });
       }
     }

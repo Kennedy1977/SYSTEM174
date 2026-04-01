@@ -276,9 +276,7 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
   </Section>
 </BaseLayout>
 
-<script type="module" is:inline>
-  import { navigate } from "astro:transitions/client";
-
+<script is:inline>
   (() => {
     const filterForm = document.querySelector("[data-playlist-filter-form]");
     if (!(filterForm instanceof HTMLFormElement)) return;
@@ -296,7 +294,11 @@ const selectedPlaylistVisibleTracks = (selectedPlaylist?.tracks ?? []).filter(
       params.delete("page");
       params.delete("playlist");
       const query = params.toString();
-      navigate(query ? `/playlists?${query}` : "/playlists");
+      const target = query ? `/playlists?${query}` : "/playlists";
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (target !== current) {
+        window.location.assign(target);
+      }
     });
   })();
 </script>
