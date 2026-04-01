@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getSiteVariant } from "./site-config";
+import { getSiteUrl, getSiteVariant } from "./site-config";
 import { siteContent } from "./site-content";
 
 const siteVariant = getSiteVariant();
@@ -23,11 +23,7 @@ export const siteConsentCookieDurationDays = 180;
 export const siteControllerName = siteContent.controllerName;
 export const sitePrivacyContactEmail = "mgmt@umsl.co.uk";
 export const sitePrivacyLastUpdated = "31 March 2026";
-export const siteOrigin =
-  process.env.SITE_URL ??
-  (siteVariant === "pimpsoul"
-    ? "https://pimpsoul.co.uk"
-    : "https://system174.co.uk");
+export const siteOrigin = getSiteUrl();
 export const siteHostName = new URL(siteOrigin).hostname;
 const siteOriginBase = siteOrigin.replace(/\/+$/, "");
 

@@ -54,6 +54,7 @@ Track-to-brand website assignments are stored separately in `.soundcloud.catalog
 For `system174.co.uk`, set:
 
 - `SITE_VARIANT=system174`
+- `SITE_URL=https://system174.co.uk`
 - `SOUNDCLOUD_REDIRECT_URI=https://system174.co.uk/soundcloud/callback`
 
 Also add the same callback URL in your SoundCloud app settings.
@@ -64,6 +65,8 @@ For `pimpsoul.co.uk`, set:
 - `SITE_URL=https://pimpsoul.co.uk`
 
 The `pimpsoul` variant switches the heading typeface to `DraftWerk Bold` while leaving the body copy unchanged.
+
+Do not leave `SITE_URL` blank on the server. If you do not want to set it, remove the variable entirely and the app will fall back to the correct domain for the selected `SITE_VARIANT`.
 
 ## Admin dashboard
 

@@ -41,6 +41,31 @@ export function getSiteVariant(): SiteVariant {
   return "system174";
 }
 
+export function getDefaultSiteUrl(variant: SiteVariant = getSiteVariant()) {
+  return variant === "pimpsoul"
+    ? "https://pimpsoul.co.uk"
+    : "https://system174.co.uk";
+}
+
+export function getSiteUrl() {
+  const fallback = getDefaultSiteUrl();
+  const rawSiteUrl = getEnvValue("SITE_URL").trim();
+
+  if (!rawSiteUrl) {
+    return fallback;
+  }
+
+  try {
+    const parsed = new URL(rawSiteUrl);
+    return parsed.toString();
+  } catch {
+    console.warn(
+      `[site-config] ignoring invalid SITE_URL "${rawSiteUrl}" and falling back to ${fallback}`,
+    );
+    return fallback;
+  }
+}
+
 export function isSoundCloudPaginationEnabled() {
   return parseBooleanFlag(getEnvValue("SOUNDCLOUD_PAGINATION"), false);
 }
