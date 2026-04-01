@@ -2,6 +2,9 @@
   "name": "system174-next",
   "private": true,
   "version": "0.0.1",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

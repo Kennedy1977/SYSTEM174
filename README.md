@@ -78,6 +78,9 @@ If your host clears the application filesystem on deploy, the dashboard will now
 - Install command: `npm install`
 - Build command: `npm run build`
 - Start command: `npm run start`
+- Node.js version: `22.x`
+
+This repo uses `next@16`, which requires Node.js `20.9+`. Hostinger supports `18.x`, `20.x`, `22.x`, and `24.x`, and auto-detects the version from your project settings. If the deploy still shows `503`, manually force the app to `22.x` in the Hostinger deployment settings and redeploy.
 
 ## Artwork workflow
 
