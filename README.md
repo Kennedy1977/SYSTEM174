@@ -30,8 +30,15 @@ npm run start
 ```
 
 The root [server.js](/Users/andrew/Development/SYSTEM174/server.js) bootstrap is
-the production entrypoint. If a compiled `dist/` is missing, it will run
-`npm run build` before starting the API.
+the production entrypoint. It tries to compile `dist/` first, but if the host
+build step is flaky it can still boot the API directly from TypeScript through
+`tsx`.
+
+For a strict local compile check, use:
+
+```sh
+npm run build:strict
+```
 
 ## Environment variables
 
