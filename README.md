@@ -29,8 +29,9 @@ npm run build
 npm run start
 ```
 
-If your host starts the app before a compiled `dist/` exists, `npm run start`
-will trigger a build automatically.
+The root [server.js](/Users/andrew/Development/SYSTEM174/server.js) bootstrap is
+the production entrypoint. If a compiled `dist/` is missing, it will run
+`npm run build` before starting the API.
 
 ## Environment variables
 

@@ -8,8 +8,7 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.json",
-    "prestart": "node scripts/ensure-build.mjs",
-    "start": "node dist/main.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",
