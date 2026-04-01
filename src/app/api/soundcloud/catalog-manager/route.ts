@@ -9,7 +9,11 @@ import {
   type SoundCloudCatalogTrackDecision,
 } from "@/lib/soundcloud-catalog";
 import {
+  buildSoundCloudCatalogOverridesBackup,
+  getSoundCloudCatalogOverridesStorageInfo,
   getSoundCloudCatalogOverrides,
+  parseSoundCloudCatalogOverridesBackup,
+  replaceSoundCloudCatalogOverrides,
   updateSoundCloudCatalogAssignments,
   type SoundCloudCatalogAssignment,
   type SoundCloudCatalogOverrideMap,
@@ -31,7 +35,16 @@ type CatalogSaveRequest = {
   }>;
 };
 
-type CatalogRequest = CatalogListRequest | CatalogSaveRequest;
+type CatalogImportRequest = {
+  key?: string;
+  action?: "import";
+  backup?: unknown;
+};
+
+type CatalogRequest =
+  | CatalogListRequest
+  | CatalogSaveRequest
+  | CatalogImportRequest;
 
 function makeHeaders() {
   return {
@@ -120,6 +133,7 @@ function buildCatalogPayload(
       id: decision.track.id,
       title: decision.track.title,
       genre: decision.track.genre ?? "",
+      artworkUrl: decision.track.artwork_url ?? "",
       createdAt: decision.track.created_at,
       permalinkUrl: decision.track.permalink_url,
       playbackCount: decision.track.playback_count ?? 0,
@@ -134,6 +148,8 @@ function buildCatalogPayload(
 
   return {
     checkedAt: new Date().toISOString(),
+    storage: getSoundCloudCatalogOverridesStorageInfo(),
+    backup: buildSoundCloudCatalogOverridesBackup(overrides),
     summary: {
       totalTracks: items.length,
       manualAssignments: items.filter((item) => item.manualAssignment !== "auto")
@@ -233,6 +249,33 @@ export async function POST(request: Request) {
     return json({
       message: `Saved ${assignments.length} track assignment${
         assignments.length === 1 ? "" : "s"
+      }.`,
+      ...buildCatalogPayload(decisions, overrides),
+    });
+  }
+
+  if (action === "import") {
+    const { overrides, recognized } = parseSoundCloudCatalogOverridesBackup(
+      (body as CatalogImportRequest | null)?.backup,
+    );
+
+    if (!recognized) {
+      return json(
+        {
+          error:
+            "Backup payload not recognized. Upload a catalog backup exported from this dashboard.",
+        },
+        400,
+      );
+    }
+
+    await replaceSoundCloudCatalogOverrides(overrides);
+    const data = await getCachedSoundCloudDashboardData();
+    const decisions = buildTrackCatalogDecisions(data, overrides);
+
+    return json({
+      message: `Imported ${Object.keys(overrides).length} saved track assignment${
+        Object.keys(overrides).length === 1 ? "" : "s"
       }.`,
       ...buildCatalogPayload(decisions, overrides),
     });

@@ -18,6 +18,12 @@ export type SoundCloudCatalogOverrideMap = Record<
   SoundCloudCatalogOverrideEntry
 >;
 
+export type SoundCloudCatalogOverridesBackup = {
+  exportedAt: string;
+  assignmentCount: number;
+  overrides: SoundCloudCatalogOverrideMap;
+};
+
 type PersistedCatalogOverrides = Partial<{
   overrides: Record<string, unknown>;
   trackAssignments: Record<string, unknown>;
@@ -97,17 +103,39 @@ function normalizeOverrides(value: unknown): SoundCloudCatalogOverrideMap {
   return normalized;
 }
 
+export function parseSoundCloudCatalogOverridesBackup(value: unknown): {
+  overrides: SoundCloudCatalogOverrideMap;
+  recognized: boolean;
+} {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {
+      overrides: {},
+      recognized: false,
+    };
+  }
+
+  const payload = value as PersistedCatalogOverrides;
+
+  if ("overrides" in payload || "trackAssignments" in payload) {
+    return {
+      overrides: normalizeOverrides(payload.overrides ?? payload.trackAssignments),
+      recognized: true,
+    };
+  }
+
+  const normalized = normalizeOverrides(value);
+
+  return {
+    overrides: normalized,
+    recognized: Object.keys(normalized).length > 0,
+  };
+}
+
 export async function getSoundCloudCatalogOverrides(): Promise<SoundCloudCatalogOverrideMap> {
   try {
     const raw = await readFile(getSoundCloudCatalogOverridesPath(), "utf-8");
     const parsed = JSON.parse(raw) as PersistedCatalogOverrides | unknown;
-
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      const payload = parsed as PersistedCatalogOverrides;
-      return normalizeOverrides(payload.overrides ?? payload.trackAssignments);
-    }
-
-    return normalizeOverrides(parsed);
+    return parseSoundCloudCatalogOverridesBackup(parsed).overrides;
   } catch (error) {
     if ((error as { code?: string }).code !== "ENOENT") {
       console.warn("[soundcloud] unable to read catalog overrides", error);
@@ -120,14 +148,37 @@ export async function getSoundCloudCatalogOverrides(): Promise<SoundCloudCatalog
 async function writeSoundCloudCatalogOverrides(
   overrides: SoundCloudCatalogOverrideMap,
 ) {
-  const payload = {
-    generated_at: new Date().toISOString(),
-    overrides,
-  };
-
+  const payload = buildSoundCloudCatalogOverridesBackup(overrides);
   const overridesPath = getSoundCloudCatalogOverridesPath();
   await mkdir(path.dirname(overridesPath), { recursive: true });
   await writeFile(overridesPath, JSON.stringify(payload, null, 2), "utf-8");
+}
+
+export function buildSoundCloudCatalogOverridesBackup(
+  overrides: SoundCloudCatalogOverrideMap,
+): SoundCloudCatalogOverridesBackup {
+  return {
+    exportedAt: new Date().toISOString(),
+    assignmentCount: Object.keys(overrides).length,
+    overrides,
+  };
+}
+
+export async function replaceSoundCloudCatalogOverrides(
+  overrides: SoundCloudCatalogOverrideMap,
+) {
+  await writeSoundCloudCatalogOverrides(overrides);
+  return overrides;
+}
+
+export function getSoundCloudCatalogOverridesStorageInfo() {
+  const configuredPath = getEnvValue("SOUNDCLOUD_CATALOG_OVERRIDES_PATH").trim();
+
+  return {
+    resolvedPath: getSoundCloudCatalogOverridesPath(),
+    configuredPath: configuredPath || ".soundcloud.catalog-overrides.json",
+    usingDefaultPath: !configuredPath,
+  };
 }
 
 export async function updateSoundCloudCatalogAssignments(

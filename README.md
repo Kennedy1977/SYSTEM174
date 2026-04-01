@@ -1,6 +1,6 @@
 # SYSTEM174
 
-Astro site configured for SSR with an Express runtime so it can be deployed to platforms that support Node.js/Express app detection.
+A Next.js app-router site for `system174.co.uk`, including SoundCloud-powered music pages, consent-managed analytics, and a protected admin dashboard.
 
 ## Local development
 
@@ -8,6 +8,8 @@ Astro site configured for SSR with an Express runtime so it can be deployed to p
 npm install
 npm run dev
 ```
+
+The local app runs at `http://localhost:3000`.
 
 ## Production build and run
 
@@ -31,12 +33,16 @@ Required:
 Optional:
 
 - `SOUNDCLOUD_TOKENS_PATH`
+- `SOUNDCLOUD_CATALOG_OVERRIDES_PATH`
 - `SOUNDCLOUD_PAGINATION`
+- `ADMIN_DASHBOARD_PASSWORD`
 - `SOUNDCLOUD_TOKEN_EXPORT_KEY`
 
 The app now refreshes SoundCloud tokens automatically and writes the latest access and refresh token pair to `.soundcloud.tokens.json` by default. On restart it will read that cache back in, so you do not need to manually re-authenticate after every token refresh.
 
 If your host clears the application filesystem on restart or deploy, point `SOUNDCLOUD_TOKENS_PATH` at a persistent writable location. If the host does not offer persistent storage, you will still need to reconnect SoundCloud after the token cache is lost.
+
+Track-to-brand website assignments are stored separately in `.soundcloud.catalog-overrides.json` by default. If your host clears the application filesystem on deploy or restart, point `SOUNDCLOUD_CATALOG_OVERRIDES_PATH` at persistent writable storage too.
 
 `SOUNDCLOUD_PAGINATION` controls how the `music` and `playlists` pages load items:
 
@@ -49,9 +55,23 @@ For `system174.co.uk`, set:
 
 Also add the same callback URL in your SoundCloud app settings.
 
-If you cannot read `.soundcloud.tokens.json` on the deployed host, you can temporarily set `SOUNDCLOUD_TOKEN_EXPORT_KEY` on the server, visit `/soundcloud/token-export`, enter that key, copy the current tokens into your persistent env, then remove `SOUNDCLOUD_TOKEN_EXPORT_KEY` again.
+## Admin dashboard
 
-If you need to diagnose the live SoundCloud connection without exposing the raw tokens, visit `/soundcloud/status` and use the same `SOUNDCLOUD_TOKEN_EXPORT_KEY` to view the current config/token/API health check.
+The protected admin area lives at `/admin/dashboard`.
+
+Set `ADMIN_DASHBOARD_PASSWORD` on the server to enable it.
+
+If `ADMIN_DASHBOARD_PASSWORD` is not set, the dashboard falls back to `SOUNDCLOUD_TOKEN_EXPORT_KEY` for access, which preserves compatibility with the older temporary admin flow.
+
+Inside the admin dashboard you can:
+
+- check live SoundCloud connection health
+- refresh the cached SoundCloud catalog manually
+- review the full track list and assign tracks to `SYSTEM 174`, `The Pimpsoul Project`, `Andy K / Archive`, or `Hidden`
+- download a JSON backup of track assignments, import a backup after redeploy, and restore the latest browser-stored backup
+- export the current SoundCloud token pair from `/admin/dashboard/tokens`
+
+If your host clears the application filesystem on deploy, the dashboard will now show the override storage path and lets you export/import assignment backups. For best durability, keep `SOUNDCLOUD_CATALOG_OVERRIDES_PATH` on persistent storage and download a backup before redeploying.
 
 ## Hostinger deploy settings
 

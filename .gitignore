@@ -18,6 +18,7 @@ pnpm-debug.log*
 .env
 .env.production
 .soundcloud.tokens.json
+.soundcloud.catalog-overrides.json
 
 # macOS-specific files
 .DS_Store
