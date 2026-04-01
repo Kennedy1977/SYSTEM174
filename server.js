@@ -57,19 +57,14 @@ function ensureProductionBuild() {
   }
 
   console.log(".next/BUILD_ID not found. Running next build before startup...");
+  const buildScriptPath = path.resolve(__dirname, "scripts/run-next-build.mjs");
 
-  let nextBin;
-
-  try {
-    nextBin = require.resolve("next/dist/bin/next");
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "unknown resolution error";
-    console.error(`Next build binary not found: ${message}`);
-    console.error("Ensure dependencies are installed before starting the app.");
+  if (!fs.existsSync(buildScriptPath)) {
+    console.error(`Build script missing: ${buildScriptPath}`);
     process.exit(1);
   }
 
-  runBuildStep("Next build", [nextBin, "build", "--webpack"]);
+  runBuildStep("Next build", [buildScriptPath]);
 
   if (!fs.existsSync(buildIdPath)) {
     console.error("Build completed but .next/BUILD_ID is still missing.");

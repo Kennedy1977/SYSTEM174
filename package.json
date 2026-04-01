@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "node server.js",
-    "build": "next build --webpack",
+    "build": "node scripts/run-next-build.mjs",
     "start": "node server.js",
     "artwork": "node scripts/process-artwork.mjs",
     "preview": "node server.js"
