@@ -9,9 +9,10 @@ import {
   siteStructuredData,
   siteTitle,
 } from "@/lib/site-meta";
+import { getCachedSoundCloudDashboardData } from "@/lib/soundcloud-dashboard-cache";
 import { buildSystem174Catalog } from "@/lib/soundcloud-catalog";
+import { getSoundCloudCatalogOverrides } from "@/lib/soundcloud-catalog-overrides";
 import { getSoundCloudPlayerUrl } from "@/lib/soundcloud-embed";
-import { getSoundCloudDashboardData } from "@/lib/soundcloud";
 
 export const metadata = buildPageMetadata({
   title: siteTitle,
@@ -49,7 +50,11 @@ const projectEras = [
 ] as const;
 
 export default async function HomePage() {
-  const soundcloud = buildSystem174Catalog(await getSoundCloudDashboardData());
+  const [dashboardData, catalogOverrides] = await Promise.all([
+    getCachedSoundCloudDashboardData(),
+    getSoundCloudCatalogOverrides(),
+  ]);
+  const soundcloud = buildSystem174Catalog(dashboardData, catalogOverrides);
   const selectedTracks = soundcloud.tracks
     .filter((track) => {
       const genre = (track.genre ?? "").trim().toLowerCase();

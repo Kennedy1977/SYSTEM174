@@ -3,11 +3,12 @@ import AutoSubmitForm from "@/components/AutoSubmitForm";
 import Card from "@/components/Card";
 import Section from "@/components/Section";
 import SoundCloudTrackCard from "@/components/SoundCloudTrackCard";
+import { getCachedSoundCloudDashboardData } from "@/lib/soundcloud-dashboard-cache";
 import { buildPageMetadata } from "@/lib/site-meta";
 import { isSoundCloudPaginationEnabled } from "@/lib/site-config";
 import { buildSystem174Catalog } from "@/lib/soundcloud-catalog";
+import { getSoundCloudCatalogOverrides } from "@/lib/soundcloud-catalog-overrides";
 import { getSoundCloudPlayerUrl } from "@/lib/soundcloud-embed";
-import { getSoundCloudDashboardData } from "@/lib/soundcloud";
 import {
   getSearchParamValue,
   resolvePageSearchParams,
@@ -52,7 +53,11 @@ const isRemixTrack = (item: { title: string }) =>
 
 export default async function MusicPage({ searchParams }: MusicPageProps) {
   const params = await resolvePageSearchParams(searchParams);
-  const soundcloud = buildSystem174Catalog(await getSoundCloudDashboardData());
+  const [dashboardData, catalogOverrides] = await Promise.all([
+    getCachedSoundCloudDashboardData(),
+    getSoundCloudCatalogOverrides(),
+  ]);
+  const soundcloud = buildSystem174Catalog(dashboardData, catalogOverrides);
   const tracks = soundcloud.tracks;
   const playlists = soundcloud.playlists;
 
@@ -225,18 +230,7 @@ export default async function MusicPage({ searchParams }: MusicPageProps) {
               <option value="likes">Most likes</option>
             </select>
           </div>
-          <div className="md:col-span-3">
-            <button
-              type="submit"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#1A2230] px-4 py-2 text-sm font-semibold text-[#E7EDF6] transition duration-150 ease-out hover:border-white/20 hover:bg-[#1A2230]/80"
-            >
-              Apply filters
-            </button>
-          </div>
         </AutoSubmitForm>
-        <p className="mt-3 text-[11px] uppercase tracking-[0.12em] text-[#77849A]">
-          Cover and Bootleg are always hidden
-        </p>
       </div>
 
       <div className="mb-12">
@@ -244,9 +238,10 @@ export default async function MusicPage({ searchParams }: MusicPageProps) {
           <h2 className="font-display text-xl uppercase tracking-[-0.01em] md:text-2xl">
             Tracks
           </h2>
-          <form
+          <AutoSubmitForm
             method="get"
             action="/music"
+            submitOnSelectChange={false}
             className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row"
           >
             <label htmlFor="track-search" className="sr-only">
@@ -281,11 +276,11 @@ export default async function MusicPage({ searchParams }: MusicPageProps) {
                 Clear
               </Link>
             ) : null}
-          </form>
+          </AutoSubmitForm>
         </div>
 
         {searchedTracks.length === 0 ? (
-          <Card>
+          <Card className="mt-4">
             <p className="font-body text-[15px] leading-relaxed text-[#AAB6C6]">
               No tracks match the current genre, remix, and search filters.
             </p>

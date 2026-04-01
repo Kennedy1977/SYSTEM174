@@ -2,11 +2,12 @@ import Link from "next/link";
 import AutoSubmitForm from "@/components/AutoSubmitForm";
 import Card from "@/components/Card";
 import Section from "@/components/Section";
+import { getCachedSoundCloudDashboardData } from "@/lib/soundcloud-dashboard-cache";
 import { buildPageMetadata } from "@/lib/site-meta";
 import { isSoundCloudPaginationEnabled } from "@/lib/site-config";
 import { buildSystem174Catalog } from "@/lib/soundcloud-catalog";
+import { getSoundCloudCatalogOverrides } from "@/lib/soundcloud-catalog-overrides";
 import { getSoundCloudPlayerUrl } from "@/lib/soundcloud-embed";
-import { getSoundCloudDashboardData } from "@/lib/soundcloud";
 import {
   getSearchParamValue,
   resolvePageSearchParams,
@@ -47,7 +48,11 @@ export default async function PlaylistsPage({
   searchParams,
 }: PlaylistsPageProps) {
   const params = await resolvePageSearchParams(searchParams);
-  const soundcloud = buildSystem174Catalog(await getSoundCloudDashboardData());
+  const [dashboardData, catalogOverrides] = await Promise.all([
+    getCachedSoundCloudDashboardData(),
+    getSoundCloudCatalogOverrides(),
+  ]);
+  const soundcloud = buildSystem174Catalog(dashboardData, catalogOverrides);
   const playlists = soundcloud.playlists;
 
   const selectedGenre = getSearchParamValue(params, "genre").trim();
@@ -162,14 +167,6 @@ export default async function PlaylistsPage({
                 ))}
               </select>
             </div>
-            <div>
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#1A2230] px-4 py-2 text-sm font-semibold text-[#E7EDF6] transition duration-150 ease-out hover:border-white/20 hover:bg-[#1A2230]/80"
-              >
-                Apply filters
-              </button>
-            </div>
           </AutoSubmitForm>
         </div>
       ) : null}
@@ -195,9 +192,10 @@ export default async function PlaylistsPage({
           </div>
 
           {!selectedPlaylist ? (
-            <form
+            <AutoSubmitForm
               method="get"
               action="/playlists"
+              submitOnSelectChange={false}
               className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row"
             >
               <label htmlFor="playlist-search" className="sr-only">
@@ -228,7 +226,7 @@ export default async function PlaylistsPage({
                   Clear
                 </Link>
               ) : null}
-            </form>
+            </AutoSubmitForm>
           ) : null}
         </div>
 

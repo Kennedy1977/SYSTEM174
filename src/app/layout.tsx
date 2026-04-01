@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import Nav from "@/components/Nav";
 import PageLifecycle from "@/components/PageLifecycle";
 import PersistentSoundCloudPlayer from "@/components/PersistentSoundCloudPlayer";
+import RouteTransition from "@/components/RouteTransition";
 import {
   siteAppleTouchIconPath,
   siteDefaultDescription,
@@ -80,7 +81,9 @@ export default function RootLayout({
         <div className="site-content">
           <Nav />
           <main id="main-content" tabIndex={-1} className="flex-1">
-            {children}
+            <Suspense fallback={children}>
+              <RouteTransition>{children}</RouteTransition>
+            </Suspense>
           </main>
           <Footer />
         </div>

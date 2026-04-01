@@ -3,11 +3,14 @@ import {
   hasAuthorizedAdminSession,
   matchesAdminPassword,
 } from "@/lib/admin-auth";
-import { getSoundCloudTokenSnapshot } from "@/lib/soundcloud";
+import {
+  getSoundCloudDashboardCacheInfo,
+  refreshSoundCloudDashboardCache,
+} from "@/lib/soundcloud-dashboard-cache";
 
 export const dynamic = "force-dynamic";
 
-type ExportRequestBody = {
+type RefreshRequestBody = {
   key?: string;
 };
 
@@ -61,7 +64,7 @@ async function readKeyFromRequest(request: Request) {
 
   if (contentType.includes("application/json")) {
     try {
-      const parsed = JSON.parse(rawBody) as ExportRequestBody;
+      const parsed = JSON.parse(rawBody) as RefreshRequestBody;
       return parsed.key?.trim() ?? "";
     } catch {
       return "";
@@ -76,7 +79,7 @@ async function readKeyFromRequest(request: Request) {
 }
 
 export async function GET() {
-  return json({ error: "Use POST to export tokens." }, 405);
+  return json({ error: "Use POST to refresh the SoundCloud cache." }, 405);
 }
 
 export async function POST(request: Request) {
@@ -94,19 +97,28 @@ export async function POST(request: Request) {
     }
   }
 
-  const snapshot = await getSoundCloudTokenSnapshot();
-
-  if (!snapshot.hasAccessToken && !snapshot.hasRefreshToken) {
-    return json(
-      { error: "No SoundCloud tokens are available on the server yet." },
-      404,
-    );
-  }
+  const refresh = await refreshSoundCloudDashboardCache();
+  const cache = getSoundCloudDashboardCacheInfo();
+  const hasData = Boolean(
+    refresh.data.me || refresh.data.tracks.length || refresh.data.playlists.length,
+  );
 
   return json({
-    SOUNDCLOUD_ACCESS_TOKEN: snapshot.accessToken,
-    SOUNDCLOUD_REFRESH_TOKEN: snapshot.refreshToken,
+    action: "cache_refresh",
+    cacheUpdated: refresh.cacheUpdated,
+    usedExistingCache: refresh.usedExistingCache,
+    refreshedAt: refresh.refreshedAt,
+    hasData,
+    me: refresh.data.me,
+    trackCount: refresh.data.tracks.length,
+    playlistCount: refresh.data.playlists.length,
+    cache,
+    message: refresh.cacheUpdated
+      ? "SoundCloud cache refreshed from live API data."
+      : refresh.usedExistingCache
+        ? "Live refresh returned no usable data, so the existing SoundCloud cache was kept."
+        : "Live refresh returned no usable data and no previous cache was available.",
     reminder:
-      "Copy these values into your persistent environment, then lock the dashboard or remove temporary admin access when finished.",
+      "The catalog pages now use this cached data until the next manual refresh, deploy/restart, or 7-day expiry.",
   });
 }

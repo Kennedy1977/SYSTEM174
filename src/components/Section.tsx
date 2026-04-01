@@ -18,9 +18,9 @@ export default function Section({
   const HeadingTag = `h${headingLevel}` as ElementType;
 
   return (
-    <section className="mx-auto max-w-6xl px-5 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
+    <section className="mx-auto max-w-6xl px-5 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
       {(title || description) && (
-        <header className="mb-6 sm:mb-8">
+        <header className="mb-5 sm:mb-6">
           {title ? (
             <HeadingTag className="font-display text-3xl uppercase tracking-[-0.015em] md:text-4xl">
               {title}

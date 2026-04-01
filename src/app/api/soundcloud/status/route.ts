@@ -1,15 +1,16 @@
-import crypto from "node:crypto";
+import {
+  getAdminDashboardPassword,
+  hasAuthorizedAdminSession,
+  matchesAdminPassword,
+} from "@/lib/admin-auth";
 import { getSoundCloudConnectionStatus } from "@/lib/soundcloud";
+import { getSoundCloudDashboardCacheInfo } from "@/lib/soundcloud-dashboard-cache";
 
 export const dynamic = "force-dynamic";
 
 type StatusRequestBody = {
   key?: string;
 };
-
-function getEnvValue(key: string) {
-  return process.env[key] ?? "";
-}
 
 function makeHeaders() {
   return {
@@ -42,21 +43,6 @@ function readBearerToken(request: Request) {
     return "";
   }
   return authorization.slice(7).trim();
-}
-
-function timingSafeEqual(left: string, right: string) {
-  if (!left || !right) {
-    return false;
-  }
-
-  const leftBuffer = Buffer.from(left);
-  const rightBuffer = Buffer.from(right);
-
-  if (leftBuffer.length !== rightBuffer.length) {
-    return false;
-  }
-
-  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
 }
 
 async function readKeyFromRequest(request: Request) {
@@ -93,22 +79,25 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const exportKey = getEnvValue("SOUNDCLOUD_TOKEN_EXPORT_KEY");
+  const adminPassword = getAdminDashboardPassword();
 
-  if (!exportKey) {
+  if (!adminPassword) {
     return notFound();
   }
 
-  const providedKey = await readKeyFromRequest(request);
+  if (!hasAuthorizedAdminSession(request)) {
+    const providedKey = await readKeyFromRequest(request);
 
-  if (!timingSafeEqual(providedKey, exportKey)) {
-    return json({ error: "Unauthorized" }, 401);
+    if (!matchesAdminPassword(providedKey)) {
+      return json({ error: "Unauthorized" }, 401);
+    }
   }
 
   const status = await getSoundCloudConnectionStatus();
 
   return json({
     ...status,
+    cache: getSoundCloudDashboardCacheInfo(),
     reminder:
       status.status === "ok" || status.status === "ok_missing_refresh_token"
         ? "SoundCloud requests are currently working on the live server."

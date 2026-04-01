@@ -5,30 +5,22 @@ import ButtonPrimary from "@/components/ButtonPrimary";
 import Card from "@/components/Card";
 
 export default function SoundCloudTokenExportPanel() {
-  const [key, setKey] = useState("");
   const [status, setStatus] = useState(
-    "Enter the export key to fetch the current SoundCloud token pair from the live server.",
+    "Use this tool to fetch the current SoundCloud token pair from the live server.",
   );
   const [result, setResult] = useState("Awaiting request...");
   const [refreshToken, setRefreshToken] = useState("");
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-      <div className="lg:col-span-7">
+      <div id="token-export-tools" className="scroll-mt-28 lg:col-span-7">
         <Card>
           <form
             className="space-y-4"
             onSubmit={async (event) => {
               event.preventDefault();
 
-              const trimmedKey = key.trim();
               setRefreshToken("");
-
-              if (!trimmedKey) {
-                setStatus("Enter the export key first.");
-                setResult("Awaiting request...");
-                return;
-              }
 
               setStatus("Requesting current SoundCloud tokens...");
               setResult("Loading...");
@@ -36,11 +28,7 @@ export default function SoundCloudTokenExportPanel() {
               try {
                 const response = await fetch("/api/soundcloud/token-export", {
                   method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
                   cache: "no-store",
-                  body: JSON.stringify({ key: trimmedKey }),
                 });
 
                 const raw = await response.text();
@@ -69,7 +57,7 @@ export default function SoundCloudTokenExportPanel() {
 
                 setRefreshToken(nextRefreshToken);
                 setStatus(
-                  "Tokens loaded. Copy the refresh token into your env, then remove the export key.",
+                  "Tokens loaded. Copy the refresh token into your env, then lock the dashboard when you are done.",
                 );
                 setResult(JSON.stringify(payload, null, 2));
               } catch (error) {
@@ -79,24 +67,10 @@ export default function SoundCloudTokenExportPanel() {
               }
             }}
           >
-            <label className="block">
-              <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#AAB6C6]">
-                Export Key
-              </span>
-              <input
-                type="password"
-                autoComplete="current-password"
-                placeholder="Temporary server-side export key"
-                value={key}
-                onChange={(event) => {
-                  setKey(event.currentTarget.value);
-                }}
-                className="mt-2 w-full rounded-xl border border-white/10 bg-[#0A0C10]/40 px-3 py-2 text-sm text-[#E7EDF6] placeholder:text-[#77849A] focus:border-[#5CC8FF]/50 focus:outline-none focus:ring-2 focus:ring-[#5CC8FF]/50"
-              />
-              <p className="mt-2 text-xs text-[#77849A]">
-                This must match the deployed <code>SOUNDCLOUD_TOKEN_EXPORT_KEY</code> value.
-              </p>
-            </label>
+            <p className="text-sm leading-relaxed text-[#AAB6C6]">
+              Because you are already inside the password-protected admin dashboard, this page can
+              reveal the current SoundCloud token pair directly.
+            </p>
 
             <div className="flex flex-wrap gap-3">
               <ButtonPrimary type="submit">REVEAL TOKENS</ButtonPrimary>
@@ -111,7 +85,7 @@ export default function SoundCloudTokenExportPanel() {
                   try {
                     await navigator.clipboard.writeText(refreshToken);
                     setStatus(
-                      "Refresh token copied. Remove SOUNDCLOUD_TOKEN_EXPORT_KEY after updating your env.",
+                      "Refresh token copied. Update your env, then lock the dashboard when finished.",
                     );
                   } catch (error) {
                     const message = error instanceof Error ? error.message : String(error);
@@ -131,9 +105,8 @@ export default function SoundCloudTokenExportPanel() {
         <Card>
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-[#AAB6C6]">Use Once</p>
           <p className="mt-3 text-sm leading-relaxed text-[#AAB6C6]">
-            After you copy the current token pair into your host env, delete{" "}
-            <code>SOUNDCLOUD_TOKEN_EXPORT_KEY</code> from the server and redeploy or restart the
-            app.
+            After you copy the current token pair into your host env, lock the dashboard again if
+            you do not need further admin access.
           </p>
         </Card>
         <Card>
