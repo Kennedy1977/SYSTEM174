@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "updatedAt": "2026-04-01T00:00:00.000Z",
+  "jobs": {
+    "soundcloudCatalog": {
+      "status": "idle",
+      "lastRunAt": null,
+      "message": null
+    }
+  }
+}

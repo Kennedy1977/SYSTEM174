@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "updatedAt": "2026-04-01T00:00:00.000Z",
+  "oauth": {
+    "clientId": "",
+    "clientSecretConfigured": false,
+    "redirectUri": "https://api.andrewkennedydev.com/v1/admin/soundcloud/callback"
+  },
+  "tokens": {
+    "accessToken": "",
+    "refreshToken": "",
+    "updatedAt": null
+  },
+  "sync": {
+    "status": "idle",
+    "lastSyncAt": null,
+    "message": null
+  }
+}
