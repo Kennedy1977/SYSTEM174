@@ -18,6 +18,8 @@ npm run build
 npm run start
 ```
 
+Production builds use `next build --webpack` for deployment stability, and the Express wrapper will trigger the same build automatically on startup if `.next/BUILD_ID` is missing.
+
 ## Environment variables
 
 Copy `.env.example` to `.env` and fill in real values.
@@ -95,7 +97,7 @@ If your host clears the application filesystem on deploy, the dashboard will now
 
 This repo uses `next@16`, which requires Node.js `20.9+`. Hostinger supports `18.x`, `20.x`, `22.x`, and `24.x`, and auto-detects the version from your project settings. If the deploy still shows `503`, manually force the app to `22.x` in the Hostinger deployment settings and redeploy.
 
-The production runtime now starts through [server.js](/Users/andrew/Development/SYSTEM174/server.js), which wraps the Next app in an Express server. A simple health endpoint is available at `/healthz`.
+The production runtime now starts through [server.js](/Users/andrew/Development/SYSTEM174/server.js), which wraps the Next app in an Express server. If the host starts the app before building `.next`, the wrapper will run the production build itself and then boot the server. A simple health endpoint is available at `/healthz`.
 
 ## Artwork workflow
 

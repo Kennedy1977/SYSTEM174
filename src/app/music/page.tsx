@@ -24,7 +24,7 @@ export const metadata = buildPageMetadata({
 export const dynamic = "force-dynamic";
 
 type MusicPageProps = {
-  searchParams?: Promise<PageSearchParams> | PageSearchParams;
+  searchParams?: Promise<PageSearchParams>;
 };
 
 const TRACKS_PAGE_SIZE = 8;

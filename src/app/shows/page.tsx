@@ -17,7 +17,7 @@ export const metadata = buildPageMetadata({
 });
 
 type ShowsPageProps = {
-  searchParams?: Promise<PageSearchParams> | PageSearchParams;
+  searchParams?: Promise<PageSearchParams>;
 };
 
 export default async function ShowsPage({ searchParams }: ShowsPageProps) {

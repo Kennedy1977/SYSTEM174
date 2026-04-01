@@ -23,7 +23,7 @@ export const metadata = buildPageMetadata({
 export const dynamic = "force-dynamic";
 
 type PlaylistsPageProps = {
-  searchParams?: Promise<PageSearchParams> | PageSearchParams;
+  searchParams?: Promise<PageSearchParams>;
 };
 
 const PLAYLISTS_PAGE_SIZE = 12;

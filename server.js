@@ -1,5 +1,8 @@
 require("dotenv").config();
 
+const fs = require("node:fs");
+const path = require("node:path");
+const { spawnSync } = require("node:child_process");
 const express = require("express");
 const next = require("next");
 
@@ -15,6 +18,67 @@ process.env.NODE_ENV = inferredNodeEnv;
 const dev = inferredNodeEnv !== "production";
 const host = process.env.HOST || "0.0.0.0";
 const port = Number(process.env.PORT || 3000);
+const buildIdPath = path.resolve(__dirname, ".next/BUILD_ID");
+
+function requireSupportedNodeVersion() {
+  const [nodeMajor, nodeMinor] = process.versions.node
+    .split(".")
+    .map((part) => Number(part));
+
+  if (nodeMajor < 20 || (nodeMajor === 20 && nodeMinor < 9)) {
+    console.error(
+      `Node ${process.version} detected. This app requires Node >=20.9.0 (recommended: 22.x).`,
+    );
+    process.exit(1);
+  }
+}
+
+function runBuildStep(label, args) {
+  const result = spawnSync(process.execPath, args, {
+    cwd: __dirname,
+    stdio: "inherit",
+    env: process.env,
+  });
+
+  if (result.error) {
+    console.error(`${label} failed to launch: ${result.error.message}`);
+    process.exit(1);
+  }
+
+  if (result.status !== 0) {
+    console.error(`${label} failed with exit code ${result.status}.`);
+    process.exit(result.status || 1);
+  }
+}
+
+function ensureProductionBuild() {
+  if (dev || fs.existsSync(buildIdPath)) {
+    return;
+  }
+
+  console.log(".next/BUILD_ID not found. Running next build before startup...");
+
+  let nextBin;
+
+  try {
+    nextBin = require.resolve("next/dist/bin/next");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown resolution error";
+    console.error(`Next build binary not found: ${message}`);
+    console.error("Ensure dependencies are installed before starting the app.");
+    process.exit(1);
+  }
+
+  runBuildStep("Next build", [nextBin, "build", "--webpack"]);
+
+  if (!fs.existsSync(buildIdPath)) {
+    console.error("Build completed but .next/BUILD_ID is still missing.");
+    process.exit(1);
+  }
+}
+
+requireSupportedNodeVersion();
+ensureProductionBuild();
 
 const app = next({
   dev,
