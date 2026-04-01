@@ -3,10 +3,9 @@ import path from "node:path";
 
 const SC_API_BASE = "https://api.soundcloud.com";
 const SC_OAUTH_BASE = "https://secure.soundcloud.com";
-const metaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {};
 
 function getEnvValue(key: string) {
-  return process.env[key] ?? metaEnv[key] ?? "";
+  return process.env[key] ?? "";
 }
 
 function getAuthEnv() {
@@ -18,7 +17,10 @@ function getAuthEnv() {
 }
 
 function getTokensPath() {
-  return path.resolve(process.cwd(), getEnvValue("SOUNDCLOUD_TOKENS_PATH") || ".soundcloud.tokens.json");
+  return path.resolve(
+    /* turbopackIgnore: true */ process.cwd(),
+    getEnvValue("SOUNDCLOUD_TOKENS_PATH") || ".soundcloud.tokens.json",
+  );
 }
 
 type TokenState = {
@@ -113,6 +115,10 @@ type OAuthTokenResponse = {
   access_token: string;
   refresh_token?: string;
 };
+
+function isPresent<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== undefined;
+}
 
 function asObject(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -253,7 +259,7 @@ function sanitizePlaylist(value: unknown): SoundCloudPlaylist | null {
   }
 
   const tracks = Array.isArray(playlist.tracks)
-    ? playlist.tracks.map((track) => sanitizePlaylistTrack(track)).filter(Boolean)
+    ? playlist.tracks.map((track) => sanitizePlaylistTrack(track)).filter(isPresent)
     : undefined;
 
   return {
@@ -652,12 +658,12 @@ async function getPaginatedCollection(pathname: string, limit = 100) {
 
 export async function getMyTracks(limit = 100) {
   const collection = await getPaginatedCollection("/me/tracks", limit);
-  return collection.map((track) => sanitizeTrack(track)).filter(Boolean);
+  return collection.map((track) => sanitizeTrack(track)).filter(isPresent);
 }
 
 export async function getMyPlaylists(limit = 100) {
   const collection = await getPaginatedCollection("/me/playlists", limit);
-  return collection.map((playlist) => sanitizePlaylist(playlist)).filter(Boolean);
+  return collection.map((playlist) => sanitizePlaylist(playlist)).filter(isPresent);
 }
 
 export async function getSoundCloudDashboardData(): Promise<SoundCloudDashboardData> {

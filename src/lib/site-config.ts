@@ -1,7 +1,5 @@
-const metaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {};
-
 function getEnvValue(key: string) {
-  return process.env[key] ?? metaEnv[key] ?? "";
+  return process.env[key] ?? "";
 }
 
 function parseBooleanFlag(value: string, defaultValue = false) {
